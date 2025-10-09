@@ -88,15 +88,7 @@ app.layout = html.Div([
                 value=slider_value,
                 marks={i: f"{i}" for i in range(slider_min, slider_max + 1, max(1, slider_max // 10))},
                 tooltip={"placement": "bottom", "always_visible": True}
-            ),
-            html.Div([
-                html.Button("Toutes les images", id="select_all_btn", n_clicks=0,
-                           style={"marginRight": "10px", "padding": "5px 10px", "fontSize": "12px"}),
-                html.Button("20 premières images", id="select_first_20_btn", n_clicks=0,
-                           style={"marginRight": "10px", "padding": "5px 10px", "fontSize": "12px"}),
-                html.Button("20 dernières images", id="select_last_20_btn", n_clicks=0,
-                           style={"padding": "5px 10px", "fontSize": "12px"})
-            ], style={"marginTop": "10px", "textAlign": "center"})
+            )
         ], style={"marginBottom": "20px", "width": "90%", "margin": "0 auto"}),
         html.Div(id="selected_images_info", style={"marginTop": "10px", "fontStyle": "italic"}),
     ], style={"textAlign": "center", "margin": "20px"}),
@@ -285,4 +277,4 @@ def add_image(n_clicks, new_image, jaune, rouge, bleu, vert, marron, orange, dat
     return data, None, None, None, None, None, None, None
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
