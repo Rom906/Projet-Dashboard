@@ -12,5 +12,6 @@ class Graphiques:
         columns = st.columns([0.5, 0.5])
         for column, data in zip(columns, self.datas):
             with column:
-                st.bar_chart(data)
+                if data is not None and not data.empty:
+                    st.bar_chart(data)
         st.subheader("Deux autres graphiques dont on choisit le contenu")

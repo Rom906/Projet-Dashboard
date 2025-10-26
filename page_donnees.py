@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from typing import List
 
 
 class Page_donnees:
@@ -38,10 +39,16 @@ class Page_donnees:
 
             # Sélectionner la portion du DataFrame
             selected_data = self.data.iloc[l1:l2, c1:c2]
-            column_names = selected_data.columns.tolist()
 
-            return selected_data, column_names
+            return selected_data
         return None, []
+
+    def get_columns(self, columns_selected_names: List[str]):
+        if self.data is not None:
+            colonnes = {}
+            for column_name in columns_selected_names:
+                colonnes[column_name] = self.data[column_name]
+            return pd.DataFrame(colonnes)
 
     def afficher_page(self):
         """Affiche la page avec les données"""
