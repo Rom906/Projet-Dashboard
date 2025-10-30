@@ -12,7 +12,7 @@ class Page_donnees:
     def load_data(self, fichier=""):
         """Charge les données depuis le fichier CSV"""
         try:
-            self.data = pd.read_csv(fichier)
+            self.data = pd.read_csv(fichier, sep="\t")
         except Exception as e:
             st.error(f"Erreur lors du chargement des données: {str(e)}")
             self.data = None
