@@ -1,7 +1,6 @@
 import streamlit as st
 from page_donnees import Page_donnees
-from page_graphique_v2 import Graphiques
-from utils import Parameters
+from page_graphique_v2 import Graphiques, Area
 from typing import Dict
 
 
@@ -26,29 +25,48 @@ st.sidebar.title("Dashboard test Julien Téo V2")
 with st.sidebar.expander("Navigation"):
     page = st.sidebar.selectbox("Choisir une page", ["Données", "Graphiques"])
 
-# Ajouter des lignes
+# Ajouter des lignes et des colonnes
 
 with st.sidebar.expander("Gestion de l'affichage"):
+    st.subheader("Ajouter une ligne")
     titre_nouvelle_ligne = st.text_input("Entrez le titre de la ligne")
-    afficher_titre = st.checkbox("Afficher le nom de la ligne en haut de celle-ci")
+    afficher_titre_ligne = st.checkbox("Afficher le titre de la ligne en haut de celle-ci")
     if st.button("Ajouter une ligne"):
-        if titre_nouvelle_ligne:
-            st.text("aucun nom de ligne entré")
+        if not titre_nouvelle_ligne:
+            st.text("Aucun nom de ligne entré")
         elif titre_nouvelle_ligne in graphiques.get_lines_titles():
             st.text("Il y a déjà une ligne ayant ce nom")
         else:
-            graphiques.add_line(titre_nouvelle_ligne)
+            graphiques.add_line(titre_nouvelle_ligne, afficher_titre_ligne)
 
+    st.subheader("Ajouter une zone graphique")
+    titre_ligne_modifiée = st.selectbox("Selectionnez la ligne dans laquelle vous allez rajouter la zone", graphiques.get_lines_titles())
+    titre_nouvelle_zone = st.text_input("Entrez le titre de la noiuvelle zone")
+    afficher_titre_zone = st.checkbox("Afficher le titre de la zone en haut de celle-ci")
+    options = Area.get_types()
+    type_graphique = st.radio("Choississez le type de graphique à implémenter", options)
+    if st.button("Ajouter une zone"):
+        if not titre_ligne_modifiée:
+            st.error("Vous n'avez pas entré de ligne à modifier")
+        if not titre_nouvelle_zone:
+            st.error("Vous n'avez pas entré de nom pour la nouvelle zone")
+        if not type_graphique:
+            st.error("Aucun type de graphique séléctionné")
+        else:
+            line_index = graphiques.get_line_index(titre_ligne_modifiée)
+            if line_index is None:
+                st.error("Erreur interne, voir développeurs")
+            graphiques.add_area(line_index, titre_nouvelle_zone, type_graphique, show_name=afficher_titre_zone)  # type: ignore
 
 # Choix de la ligne et de la zone dans laquelle on modifie les graphiques
 
 with st.sidebar.expander("Gestion des graphiques"):
     st.sidebar.subheader("Choix de la ligne à modifier")
-    st.sidebar.selectbox("Selectionnez la ligne à modifier", [i for i in range(graphiques.get_lines_count())])
+    st.sidebar.selectbox("Selectionnez la ligne à modifier", options=graphiques.get_lines_titles())
 
     st.sidebar.subheader("Choix de la zone graphique à modifier")
     graphics_names = graphiques.get_areas_names()
-    area = st.multiselect("Sélectionnez la zone à afficher", options=graphics_names[0], default=graphics_names[0])
+    area = st.multiselect("Sélectionnez la zone à afficher", options=graphics_names, default=graphics_names[0] if graphics_names != [] else None)
 
     st.sidebar.subheader("Choix des paramètres du graphique")
     colonnes = données.data.columns.tolist() if données.data is not None else []

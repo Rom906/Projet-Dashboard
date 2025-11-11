@@ -16,7 +16,7 @@ class Graphiques:
     def set_datas(self, area_name: str, data: pd.DataFrame) -> None:
         self.datas[area_name] = data
 
-    def add_column(self, line: int, area_name: str, type, data: pd.DataFrame | None = None, show_name: bool = True) -> None:
+    def add_area(self, line: int, area_name: str, type, data: pd.DataFrame | None = None, show_name: bool = True) -> None:
         self.lines[line].add_area(area_name, type, data)
 
     def add_line(self, line_name: str, show_name: bool = True) -> None:
@@ -38,6 +38,12 @@ class Graphiques:
             for area_name in lines_names:  # type: ignore
                 names.append(area_name)
         return names
+
+    def get_line_index(self, line_title: str) -> int | None:
+        for i in range(len(self.lines)):
+            if self.lines[i].title == line_title:
+                return i
+        return None
 
 
 class Ligne:
@@ -62,17 +68,28 @@ class Ligne:
             names.append(area.area_name)
         return names
 
+    def set_data(self, area_name: str, data: pd.DataFrame) -> None:
+        for area in self.areas:
+            if area.area_name == area_name:
+                area.set_data(data)
+                return
+
 
 class Area:
     BARCHART = 1
     LINECHART = 2
     SCATTER = 3
 
-    def __init__(self, area_name, type, data: pd.DataFrame | None = None, show_name: bool = True) -> None:
+    def __init__(self, area_name, graphic_type: str | int, data: pd.DataFrame | None = None, show_name: bool = True) -> None:
         self.data = data
         self.show_name = show_name
         self.area_name = area_name
-        self.content_type = type
+        if type(graphic_type) is str:
+            self.content_type = self.convert_type(graphic_type)
+        elif type(graphic_type) is int:
+            self.content_type = graphic_type
+        else:
+            raise TypeError("mauvais type de type de graphique entré")
         return
 
     def render(self) -> None:
@@ -88,3 +105,22 @@ class Area:
             if self.show_name:
                 st.subheader(self.area_name)
             st.scatter_chart(self.data)
+
+    def set_data(self, data: pd.DataFrame) -> None:
+        self.data = data
+
+    # à mettre à jour à chaque ajout
+    @staticmethod
+    def convert_type(type: str) -> int:
+        if type == "Histograme":
+            return 1
+        elif type == "Graphique normal":
+            return 2
+        elif type == "Nuage de points":
+            return 3
+        else:
+            raise TypeError("wrong type for graphic")
+
+    @staticmethod
+    def get_types() -> List[str]:
+        return ["Histograme", "Graphique normal", "Nuage de points"]
