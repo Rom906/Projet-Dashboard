@@ -6,9 +6,16 @@ from typing import Dict
 
 st.set_page_config(page_title="Dashboard", layout="wide")
 
+if "graphiques" not in st.session_state:
+    st.session_state.graphiques = Graphiques()
 
-données = Page_donnees()
-graphiques = Graphiques()
+if "données" not in st.session_state:
+    st.session_state.données = Page_donnees()
+    st.session_state.données.load_data("donnees.csv")
+
+graphiques = st.session_state.graphiques
+données = st.session_state.données
+
 données.load_data("donnees.csv")
 
 
@@ -23,7 +30,7 @@ st.sidebar.title("Dashboard test Julien Téo V2")
 # Navigation entre les pages
 
 with st.sidebar.expander("Navigation"):
-    page = st.sidebar.selectbox("Choisir une page", ["Données", "Graphiques"])
+    page = st.selectbox("Choisir une page", ["Données", "Graphiques"])
 
 # Ajouter des lignes et des colonnes
 
