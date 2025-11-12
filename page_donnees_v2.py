@@ -81,7 +81,7 @@ class Page_donnees_v2:
         # Afficher les données si elles ont été chargées
         if self.data is not None:
             st.divider()
-            
+
             # Afficher un aperçu des informations sur le DataFrame
             st.subheader("Aperçu des données")
             col1, col2, col3 = st.columns(3)

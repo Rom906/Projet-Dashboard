@@ -59,6 +59,8 @@ class Ligne:
             return
         columns = st.columns([1 / len(self.areas) for i in range(len(self.areas))])
         for i in range(len(self.areas)):
+            if self.show_title:
+                st.header(self.title)
             with columns[i]:
                 self.areas[i].render()
 
