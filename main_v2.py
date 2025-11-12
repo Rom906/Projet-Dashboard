@@ -40,23 +40,24 @@ with st.sidebar.expander("Gestion de l'affichage"):
             graphiques.add_line(titre_nouvelle_ligne, afficher_titre_ligne)
 
     st.subheader("Ajouter une zone graphique")
-    titre_ligne_modifiée = st.selectbox("Selectionnez la ligne dans laquelle vous allez rajouter la zone", graphiques.get_lines_titles())
-    titre_nouvelle_zone = st.text_input("Entrez le titre de la noiuvelle zone")
-    afficher_titre_zone = st.checkbox("Afficher le titre de la zone en haut de celle-ci")
-    options = Area.get_types()
-    type_graphique = st.radio("Choississez le type de graphique à implémenter", options)
-    if st.button("Ajouter une zone"):
-        if not titre_ligne_modifiée:
-            st.error("Vous n'avez pas entré de ligne à modifier")
-        if not titre_nouvelle_zone:
-            st.error("Vous n'avez pas entré de nom pour la nouvelle zone")
-        if not type_graphique:
-            st.error("Aucun type de graphique séléctionné")
-        else:
-            line_index = graphiques.get_line_index(titre_ligne_modifiée)
-            if line_index is None:
-                st.error("Erreur interne, voir développeurs")
-            graphiques.add_area(line_index, titre_nouvelle_zone, type_graphique, show_name=afficher_titre_zone)  # type: ignore
+    if graphiques.lines != []:
+        titre_ligne_modifiée = st.selectbox("Selectionnez la ligne dans laquelle vous allez rajouter la zone", graphiques.get_lines_titles())
+        titre_nouvelle_zone = st.text_input("Entrez le titre de la noiuvelle zone")
+        afficher_titre_zone = st.checkbox("Afficher le titre de la zone en haut de celle-ci")
+        options = Area.get_types()
+        type_graphique = st.radio("Choississez le type de graphique à implémenter", options)
+        if st.button("Ajouter une zone"):
+            if not titre_ligne_modifiée:
+                st.error("Vous n'avez pas entré de ligne à modifier")
+            if not titre_nouvelle_zone:
+                st.error("Vous n'avez pas entré de nom pour la nouvelle zone")
+            if not type_graphique:
+                st.error("Aucun type de graphique séléctionné")
+            else:
+                line_index = graphiques.get_line_index(titre_ligne_modifiée)
+                if line_index is None:
+                    st.error("Erreur interne, voir développeurs")
+                graphiques.add_area(line_index, titre_nouvelle_zone, type_graphique, show_name=afficher_titre_zone)  # type: ignore
 
 # Choix de la ligne et de la zone dans laquelle on modifie les graphiques
 

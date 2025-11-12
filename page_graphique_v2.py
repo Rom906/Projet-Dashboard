@@ -36,7 +36,7 @@ class Graphiques:
     def get_areas_names(self) -> List[str]:
         names = []
         for line in self.lines:
-            lines_names = line.get_areas_names
+            lines_names = line.get_areas_names()
             for area_name in lines_names:  # type: ignore
                 names.append(area_name)
         return names
@@ -56,6 +56,8 @@ class Ligne:
         self.areas: List[Area] = []
 
     def render(self) -> None:
+        if self.areas == []:
+            return
         columns = st.columns([1 / len(self.areas) for i in range(len(self.areas))])
         for i in range(len(self.areas)):
             with columns[i]:
@@ -114,7 +116,7 @@ class Area:
     # à mettre à jour à chaque ajout
     @staticmethod
     def convert_type(type: str) -> int:
-        if type == "Histograme":
+        if type == "Histogramme":
             return 1
         elif type == "Graphique normal":
             return 2
@@ -125,4 +127,4 @@ class Area:
 
     @staticmethod
     def get_types() -> List[str]:
-        return ["Histograme", "Graphique normal", "Nuage de points"]
+        return ["Histogramme", "Graphique normal", "Nuage de points"]
