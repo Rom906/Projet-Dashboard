@@ -62,19 +62,20 @@ with st.sidebar.expander("Gestion de l'affichage"):
 
 with st.sidebar.expander("Gestion des graphiques"):
     st.sidebar.subheader("Choix de la ligne à modifier")
-    st.sidebar.selectbox("Selectionnez la ligne à modifier", options=graphiques.get_lines_titles())
+    nom_ligne_modifiée = st.sidebar.selectbox("Selectionnez la ligne à modifier", options=graphiques.get_lines_titles())
 
     st.sidebar.subheader("Choix de la zone graphique à modifier")
     graphics_names = graphiques.get_areas_names()
-    area = st.multiselect("Sélectionnez la zone à afficher", options=graphics_names, default=graphics_names[0] if graphics_names != [] else None)
+    noms_graphique_modifiés = st.multiselect("Sélectionnez la zone à modifier", options=graphics_names, default=graphics_names[0] if graphics_names != [] else None)
 
-    st.sidebar.subheader("Choix des paramètres du graphique")
-    colonnes = données.data.columns.tolist() if données.data is not None else []
-    abcisse = st.sidebar.selectbox("Selectionnez la colonne d'abcisse", options=colonnes)
-    options_slider = données.data[abcisse]  # type: ignore
-    columns_selected_graph_2 = st.sidebar.multiselect(
-        "Sélectionner les colonnes à afficher pour le graphique", options=colonnes, default=[données.data.columns[1]] if données.data is not None and len(données.data.columns) > 1 else []
-    )
+    if noms_graphique_modifiés and nom_ligne_modifiée:
+        st.sidebar.subheader("Paramètres du graphique")
+        st.subheader("choix des données")
+        colonnes_données = données.data.columns.to_list()  # type: ignore
+        colonnes_affichées = st.multiselect("Choississez les colonnes mises en ordonnée du graphique", colonnes_données)
+        données_affichées = données.get_columns(colonnes_affichées)
+        for nom_graphique_modifié in noms_graphique_modifiés:
+            graphiques.set_datas(nom_ligne_modifiée, nom_graphique_modifié, données_affichées)  # type: ignore
 
 
 """

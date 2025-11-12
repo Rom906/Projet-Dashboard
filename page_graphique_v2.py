@@ -13,8 +13,10 @@ class Graphiques:
         for line in self.lines:
             line.render()
 
-    def set_datas(self, area_name: str, data: pd.DataFrame) -> None:
-        self.datas[area_name] = data
+    def set_datas(self, line_title: str, area_name: str, data: pd.DataFrame) -> None:
+        for line in self.lines:
+            if line.title == line_title:
+                line.set_data(area_name, data)
 
     def add_area(self, line: int, area_name: str, type, data: pd.DataFrame | None = None, show_name: bool = True) -> None:
         self.lines[line].add_area(area_name, type, data)
