@@ -1,5 +1,5 @@
 import streamlit as st
-from page_donnees import Page_donnees
+from page_donnees_v2 import Page_donnees_v2
 from page_graphique_v2 import Graphiques, Area
 from typing import Dict
 
@@ -10,13 +10,10 @@ if "graphiques" not in st.session_state:
     st.session_state.graphiques = Graphiques()
 
 if "données" not in st.session_state:
-    st.session_state.données = Page_donnees()
-    st.session_state.données.load_data("donnees.csv")
+    st.session_state.données = Page_donnees_v2()
 
 graphiques = st.session_state.graphiques
 données = st.session_state.données
-
-données.load_data("donnees.csv")
 
 
 """
