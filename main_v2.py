@@ -16,9 +16,8 @@ graphiques = st.session_state.graphiques
 données = st.session_state.données
 
 
-"""
-Sidebar gestion
-"""
+# Sidebar gestion
+
 
 parameters: Dict = {}
 
@@ -83,9 +82,7 @@ with st.sidebar.expander("Gestion des graphiques"):
             graphiques.set_datas(nom_ligne_modifiée, nom_graphique_modifié, données_affichées)  # type: ignore
 
 
-"""
-Rendering
-"""
+# Rendering
 
 
 if page == "Données":
