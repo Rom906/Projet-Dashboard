@@ -9,7 +9,6 @@ class Graphiques:
         self.lines: List[Ligne] = []
 
     def render(self) -> None:
-        st.subheader("Deux premiers graphiques")
         for line in self.lines:
             line.render()
 
