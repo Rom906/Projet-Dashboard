@@ -17,11 +17,28 @@ class Graphiques:
             if line.title == line_title:
                 line.set_data(area_name, data)
 
+    def set_area_abscisse_column(self, line_title: str, area_name: str, abcsisse_column_name: str):
+        for line in self.lines:
+            if line.title == line_title:
+                line.set_area_abscisse_column(area_name, abcsisse_column_name)
+
     def add_area(self, line: int, area_name: str, type, data: pd.DataFrame | None = None, show_name: bool = True) -> None:
         self.lines[line].add_area(area_name, type, data)
 
+    def delete_area(self, line_title: str, area_name: str):
+        for line in self.lines:
+            if line.title == line_title:
+                line.delete_area(area_name)
+                return
+
     def add_line(self, line_name: str, show_name: bool = True) -> None:
         self.lines.append(Ligne(len(self.lines), line_name, show_name))
+
+    def delete_line(self, line_title: str):
+        for i in range(len(self.lines)):
+            if self.lines[i].title == line_title:
+                self.lines.pop(i)
+                return
 
     def get_lines_count(self) -> int:
         return len(self.lines)
@@ -40,6 +57,18 @@ class Graphiques:
                 names.append(area_name)
         return names
 
+    def get_area_ploted_columns(self, line_title: str, area_name: str) -> List[str]:
+        for line in self.lines:
+            if line.title == line_title:
+                return line.get_area_plotted_columns(area_name)
+        return []
+
+    def get_line_areas_name(self, line_title: str) -> List[str]:
+        for line in self.lines:
+            if line.title == line_title:
+                return line.get_areas_names()
+        raise KeyError("Aucune ligne n'a ce nom")
+
     def get_line_index(self, line_title: str) -> int | None:
         for i in range(len(self.lines)):
             if self.lines[i].title == line_title:
@@ -57,15 +86,21 @@ class Ligne:
     def render(self) -> None:
         if self.areas == []:
             return
+        if self.show_title:
+            st.header(self.title)
         columns = st.columns([1 / len(self.areas) for i in range(len(self.areas))])
         for i in range(len(self.areas)):
-            if self.show_title:
-                st.header(self.title)
             with columns[i]:
                 self.areas[i].render()
 
     def add_area(self, area_name: str, type, data: pd.DataFrame | None = None, show_name: bool = True) -> None:
         self.areas.append(Area(area_name, type, data, show_name))
+
+    def delete_area(self, area_name: str):
+        for i in range(len(self.areas)):
+            if self.areas[i].area_name == area_name:
+                self.areas.pop(i)
+                return
 
     def get_areas_names(self) -> List[str]:
         names = []
@@ -73,11 +108,25 @@ class Ligne:
             names.append(area.area_name)
         return names
 
+    def get_area_plotted_columns(self, area_name: str) -> List[str]:
+        for area in self.areas:
+            if area.area_name == area_name:
+                if area.data is not None:
+                    return area.data.columns.to_list()
+                else:
+                    return []
+        return []
+
     def set_data(self, area_name: str, data: pd.DataFrame) -> None:
         for area in self.areas:
             if area.area_name == area_name:
                 area.set_data(data)
                 return
+
+    def set_area_abscisse_column(self, area_name: str, abscisse_column_name: str):
+        for area in self.areas:
+            if area.area_name == area_name:
+                area.set_abscisse_column(abscisse_column_name)
 
 
 class Area:
@@ -113,6 +162,10 @@ class Area:
 
     def set_data(self, data: pd.DataFrame) -> None:
         self.data = data
+
+    def set_abscisse_column(self, abscisse_column_name: str):
+        if abscisse_column_name:
+            self.data = self.data.set_index(abscisse_column_name)  # type: ignore
 
     # à mettre à jour à chaque ajout
     @staticmethod

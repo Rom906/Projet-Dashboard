@@ -30,7 +30,7 @@ with st.sidebar.expander("Navigation"):
 
 # Ajouter des lignes et des colonnes
 
-with st.sidebar.expander("Gestion de l'affichage"):
+with st.sidebar.expander("Ajouter des zones"):
     st.subheader("Ajouter une ligne")
     titre_nouvelle_ligne = st.text_input("Entrez le titre de la ligne")
     afficher_titre_ligne = st.checkbox("Afficher le titre de la ligne en haut de celle-ci")
@@ -62,25 +62,48 @@ with st.sidebar.expander("Gestion de l'affichage"):
                     st.error("Erreur interne, voir développeurs")
                 graphiques.add_area(line_index, titre_nouvelle_zone, type_graphique, show_name=afficher_titre_zone)  # type: ignore
 
+# Retirer des lignes et des colonnes
+
+with st.sidebar.expander("Retirer des zones"):
+    lines_names = graphiques.get_lines_titles()
+
+    st.subheader("Supprimer une ligne")
+    ligne_supprimée = st.selectbox("Choisissez la ligne à supprimer", lines_names)
+    if st.button("Supprimer la ligne"):
+        graphiques.delete_line(ligne_supprimée)
+        lines_names.remove(ligne_supprimée)
+
+    st.subheader("Retirer une zone graphique")
+    ligne_selectionnée = st.selectbox("Séléctionnez la ligne contenant la zone à supprimer", lines_names)
+    if ligne_selectionnée:
+        areas_name = graphiques.get_line_areas_name(ligne_selectionnée)
+        area_supprimée = st.selectbox("Choisissez la zone à supprimer", areas_name)
+        if st.button("Supprimer la zone"):
+            graphiques.delete_area(ligne_selectionnée, area_supprimée)
+            areas_name.remove(area_supprimée)
+
 # Choix de la ligne et de la zone dans laquelle on modifie les graphiques
 
-with st.sidebar.expander("Gestion des graphiques"):
-    st.sidebar.subheader("Choix de la ligne à modifier")
-    nom_ligne_modifiée = st.sidebar.selectbox("Selectionnez la ligne à modifier", options=graphiques.get_lines_titles())
+with st.sidebar.expander("Gestion des données graphiqes"):
+    st.subheader("Choix de la ligne à modifier")
+    nom_ligne_modifiée = st.selectbox("Selectionnez la ligne à modifier", options=graphiques.get_lines_titles())
 
-    st.sidebar.subheader("Choix de la zone graphique à modifier")
+    st.subheader("Choix de la zone graphique à modifier")
     graphics_names = graphiques.get_areas_names()
-    noms_graphique_modifiés = st.multiselect("Sélectionnez la zone à modifier", options=graphics_names, default=graphics_names[0] if graphics_names != [] else None)
+    nom_area_modifié = st.selectbox("Sélectionnez la zone à modifier", options=graphics_names)
 
-    if noms_graphique_modifiés and nom_ligne_modifiée:
-        st.sidebar.subheader("Paramètres du graphique")
-        st.subheader("choix des données")
+    if nom_area_modifié and nom_ligne_modifiée:
+        st.subheader("Paramètres du graphique")
+        st.subheader("Choix des données")
         colonnes_données = données.data.columns.to_list()  # type: ignore
-        colonnes_affichées = st.multiselect("Choississez les colonnes mises en ordonnée du graphique", colonnes_données)
+        colonnes_deja_séléctionnées = graphiques.get_area_ploted_columns(nom_ligne_modifiée, nom_area_modifié)
+        colonnes_affichées = st.multiselect("Choississez les colonnes utilisées dans le graphique", colonnes_données, default=colonnes_deja_séléctionnées)
         données_affichées = données.get_columns(colonnes_affichées)
-        for nom_graphique_modifié in noms_graphique_modifiés:
-            graphiques.set_datas(nom_ligne_modifiée, nom_graphique_modifié, données_affichées)  # type: ignore
+        graphiques.set_datas(nom_ligne_modifiée, nom_area_modifié, données_affichées)  # type: ignore
 
+        st.subheader("Choix de l'axe d'abcisse")
+        colonne_abscisse = st.selectbox("Séléctionnez la colonne à mettre en axe des abscisses", [""] + colonnes_affichées)
+        graphiques.set_area_abscisse_column(nom_ligne_modifiée, nom_area_modifié, colonne_abscisse)
 
 # Rendering
 
