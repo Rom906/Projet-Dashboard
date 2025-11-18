@@ -18,7 +18,6 @@ données = st.session_state.données
 
 # Sidebar gestion
 
-
 parameters: Dict = {}
 
 st.sidebar.title("Dashboard test Julien Téo V2")
