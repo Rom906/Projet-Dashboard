@@ -93,14 +93,15 @@ class Ligne:
         self.areas: List[Area] = []
 
     def render(self) -> None:
+        if self.show_title:
+            st.markdown(f"# {self.title}")
         if self.areas == []:
             return
-        if self.show_title:
-            st.header(self.title)
-        columns = st.columns([1 / len(self.areas) for i in range(len(self.areas))])
-        for i in range(len(self.areas)):
-            with columns[i]:
-                self.areas[i].render()
+        with st.container():
+            columns = st.columns([1 / len(self.areas) for i in range(len(self.areas))])
+            for i in range(len(self.areas)):
+                with columns[i]:
+                    self.areas[i].render()
 
     def add_area(
         self,
@@ -148,6 +149,7 @@ class Area:
     BARCHART = 1
     LINECHART = 2
     SCATTER = 3
+    MARKDOWN = 4
 
     def __init__(
         self,
@@ -192,14 +194,16 @@ class Area:
     @staticmethod
     def convert_type(type: str) -> int:
         if type == "Histogramme":
-            return 1
+            return Area.BARCHART
         elif type == "Graphique normal":
-            return 2
+            return Area.LINECHART
         elif type == "Nuage de points":
-            return 3
+            return Area.SCATTER
+        elif type == "Markdown":
+            return Area.MARKDOWN
         else:
-            raise TypeError("wrong type for graphic")
+            raise KeyError("wrong type for graphic")
 
     @staticmethod
     def get_types() -> List[str]:
-        return ["Histogramme", "Graphique normal", "Nuage de points"]
+        return ["Histogramme", "Graphique normal", "Nuage de points", "Markdown"]
