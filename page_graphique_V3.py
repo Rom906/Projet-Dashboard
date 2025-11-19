@@ -17,12 +17,21 @@ class Graphiques:
             if line.title == line_title:
                 line.set_data(area_name, data)
 
-    def set_area_abscisse_column(self, line_title: str, area_name: str, abcsisse_column_name: str):
+    def set_area_abscisse_column(
+        self, line_title: str, area_name: str, abcsisse_column_name: str
+    ):
         for line in self.lines:
             if line.title == line_title:
                 line.set_area_abscisse_column(area_name, abcsisse_column_name)
 
-    def add_area(self, line: int, area_name: str, type, data: pd.DataFrame | None = None, show_name: bool = True) -> None:
+    def add_area(
+        self,
+        line: int,
+        area_name: str,
+        type,
+        data: pd.DataFrame | None = None,
+        show_name: bool = True,
+    ) -> None:
         self.lines[line].add_area(area_name, type, data)
 
     def delete_area(self, line_title: str, area_name: str):
@@ -63,7 +72,7 @@ class Graphiques:
                 return line.get_area_plotted_columns(area_name)
         return []
 
-    def get_line_areas_name(self, line_title: str) -> List[str]:
+    def get_line_areas_names(self, line_title: str) -> List[str]:
         for line in self.lines:
             if line.title == line_title:
                 return line.get_areas_names()
@@ -93,7 +102,13 @@ class Ligne:
             with columns[i]:
                 self.areas[i].render()
 
-    def add_area(self, area_name: str, type, data: pd.DataFrame | None = None, show_name: bool = True) -> None:
+    def add_area(
+        self,
+        area_name: str,
+        type,
+        data: pd.DataFrame | None = None,
+        show_name: bool = True,
+    ) -> None:
         self.areas.append(Area(area_name, type, data, show_name))
 
     def delete_area(self, area_name: str):
@@ -134,7 +149,13 @@ class Area:
     LINECHART = 2
     SCATTER = 3
 
-    def __init__(self, area_name, graphic_type: str | int, data: pd.DataFrame | None = None, show_name: bool = True) -> None:
+    def __init__(
+        self,
+        area_name,
+        graphic_type: str | int,
+        data: pd.DataFrame | None = None,
+        show_name: bool = True,
+    ) -> None:
         self.data = data
         self.show_name = show_name
         self.area_name = area_name

@@ -58,7 +58,7 @@ class Page_donnees_v2:
         uploaded_file = st.file_uploader(
             "Glissez-déposez votre fichier CSV ici ou cliquez pour parcourir",
             type="csv",
-            label_visibility="collapsed"
+            label_visibility="collapsed",
         )
 
         # Traiter le fichier uploadé
@@ -74,7 +74,9 @@ class Page_donnees_v2:
                 try:
                     self.data = pd.read_csv(uploaded_file, sep=",")
                     st.session_state.donnees_v2 = self
-                    st.success("Fichier chargé avec succès (séparateur détecté: virgule)!")
+                    st.success(
+                        "Fichier chargé avec succès (séparateur détecté: virgule)!"
+                    )
                 except Exception as e2:
                     st.error(f"Impossible de charger le fichier: {str(e2)}")
 
