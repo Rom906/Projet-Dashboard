@@ -16,6 +16,14 @@ class Page_donnees_v3:
             st.error(f"Erreur lors du chargement des données: {str(e)}")
             self.data = None
 
+    def load_data_from_dict(self, data_dict):
+        """Charge les données depuis un dictionnaire"""
+        try:
+            self.data = pd.DataFrame(data_dict)
+        except Exception as e:
+            st.error(f"Erreur lors du chargement des données: {str(e)}")
+            self.data = None
+
     def get_data_slice(self, l1, l2, c1, c2):
         """Récupère une portion du DataFrame entre les lignes l1 et l2 et les colonnes c1 et c2
 
@@ -50,6 +58,7 @@ class Page_donnees_v3:
             return pd.DataFrame(colonnes)
 
     def afficher_page(self):
+        from systeme_sauvegarde import load
         """Affiche la page avec les données et le drag and drop"""
         st.title(self.titre)
 
@@ -60,7 +69,32 @@ class Page_donnees_v3:
             type="csv",
             label_visibility="collapsed",
         )
+        st.subheader("Importer une sauvegarde JSON")
+        uploaded_file_json = st.file_uploader(
+            "Glissez-déposez votre fichier de sauvegarde ici ou cliquez pour parcourir",
+            type="json",
+            label_visibility="collapsed",
+        )
+        # Traiter la sauvegarde JSON
+        if uploaded_file_json is not None:
+            sauvegarde_str = uploaded_file_json.getvalue().decode("utf-8")
+            # Récupérer (ou initialiser) les instances dans la session
+            graphiques_inst = st.session_state.get("graphiques")
+            donnees_inst = st.session_state.get("données", self)
+            if graphiques_inst is None:
+                from page_graphique_V3 import Graphiques
 
+                graphiques_inst = Graphiques()
+                st.session_state.graphiques = graphiques_inst
+            # Assurer que la page de données en session existe
+            st.session_state.données = donnees_inst
+            # Charger la sauvegarde et mettre à jour les instances
+            graphiques_inst, donnees_inst = load(
+                sauvegarde_str, graphiques_inst, donnees_inst
+            )
+            st.session_state.graphiques = graphiques_inst
+            st.session_state.données = donnees_inst
+            self.data = donnees_inst.data
         # Traiter le fichier uploadé
         if uploaded_file is not None:
             try:
@@ -106,3 +140,25 @@ class Page_donnees_v3:
             st.dataframe(self.data.describe(), use_container_width=True)
         else:
             st.info("Aucune donnée n'a été chargée. Veuillez importer un fichier CSV.")
+
+        st.sidebar.subheader("Importer une sauvegarde")
+        uploaded_file = st.sidebar.file_uploader(
+            "Choisissez un fichier de sauvegarde", type=["json"]
+        )
+        if uploaded_file is not None:
+            sauvegarde_str = uploaded_file.getvalue().decode("utf-8")
+            # Utiliser les instances stockées dans la session si disponibles
+            graphiques_inst = st.session_state.get("graphiques")
+            donnees_inst = st.session_state.get("données", self)
+            if graphiques_inst is None:
+                from page_graphique_V3 import Graphiques
+
+                graphiques_inst = Graphiques()
+            graphiques_inst, donnees_inst = load(
+                sauvegarde_str, graphiques_inst, donnees_inst
+            )
+            st.session_state.graphiques = graphiques_inst
+            st.session_state.données = donnees_inst
+            self.data = donnees_inst.data
+        else:
+            pass

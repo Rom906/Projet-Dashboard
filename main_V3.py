@@ -7,6 +7,19 @@ from systeme_sauvegarde import save
 
 st.set_page_config(page_title="Dashboard", layout="wide")
 
+
+def safe_rerun() -> None:
+    """Appelle st.experimental_rerun() quand l'application est lancée par
+    Streamlit; ignore proprement l'appel quand le script est exécuté avec
+    `python main_V3.py` (mode "bare"), empêchant une exception non souhaitée.
+    """
+    try:
+        st.experimental_rerun()
+    except Exception:
+        # Si on est hors du contexte Streamlit (par ex. execution directe
+        # avec `python main_V3.py`), on ignore silencieusement le rerun.
+        return
+
 if "graphiques" not in st.session_state:
     st.session_state.graphiques = Graphiques()
 
@@ -21,7 +34,7 @@ données = st.session_state.données
 
 parameters: Dict = {}
 
-st.sidebar.title("Dashboard test Julien Téo V2")
+st.sidebar.title("Dashboard test Julien Téo Romain V3")
 
 # Navigation entre les pages
 
@@ -43,6 +56,8 @@ with st.sidebar.expander("Ajouter des zones"):
             st.text("Il y a déjà une ligne ayant ce nom")
         else:
             graphiques.add_line(titre_nouvelle_ligne, afficher_titre_ligne)
+            # forcer un rerun pour mettre à jour l'affichage immédiatement
+            safe_rerun()
 
     st.subheader("Ajouter une zone graphique")
     if graphiques.lines != []:
@@ -70,6 +85,8 @@ with st.sidebar.expander("Ajouter des zones"):
                 if line_index is None:
                     st.error("Erreur interne, voir développeurs")
                 graphiques.add_area(line_index, titre_nouvelle_zone, type_graphique, show_name=afficher_titre_zone)  # type: ignore
+                # forcer un rerun pour que la nouvelle zone soit rendue
+                safe_rerun()
 
 # Retirer des lignes et des colonnes
 
@@ -81,6 +98,7 @@ with st.sidebar.expander("Retirer des zones"):
     if st.button("Supprimer la ligne"):
         graphiques.delete_line(ligne_supprimée)
         lines_names.remove(ligne_supprimée)
+        safe_rerun()
 
     st.subheader("Retirer une zone graphique")
     ligne_selectionnée = st.selectbox(
@@ -92,6 +110,7 @@ with st.sidebar.expander("Retirer des zones"):
         if st.button("Supprimer la zone"):
             graphiques.delete_area(ligne_selectionnée, area_supprimée)
             areas_name.remove(area_supprimée)
+            safe_rerun()
 
 # Choix de la ligne et de la zone dans laquelle on modifie les graphiques
 
@@ -122,6 +141,8 @@ with st.sidebar.expander("Gestion des données graphiqes"):
             )
             données_affichées = données.get_columns(colonnes_affichées)
             graphiques.set_datas(nom_ligne_modifiée, nom_area_modifié, données_affichées)  # type: ignore
+            # re-render immediately
+            safe_rerun()
 
             st.subheader("Choix de l'axe d'abcisse")
             colonne_abscisse = st.selectbox(
@@ -132,6 +153,7 @@ with st.sidebar.expander("Gestion des données graphiqes"):
                 graphiques.set_area_abscisse_column(
                     nom_ligne_modifiée, nom_area_modifié, colonne_abscisse
                 )
+                safe_rerun()
 
 # Sauvegarde
 
@@ -141,7 +163,6 @@ st.sidebar.download_button(
     file_name="Sauvegarde_dashboard.json",
     mime="application/json",
 )
-
 
 # Rendering
 
