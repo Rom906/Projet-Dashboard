@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 from typing import List
+import csv
+import io
+import re
 
 
 class Page_donnees_v3:
@@ -10,8 +13,90 @@ class Page_donnees_v3:
 
     def load_data(self, fichier=""):
         """Charge les données depuis le fichier CSV"""
+        # Supporte soit un chemin (str) soit un file-like (UploadedFile de Streamlit)
+        sample = None
+        delim = None
+        decimal = "."
+
+        def _read_sample(f):
+            # lire un échantillon pour détecter le séparateur
+            try:
+                pos = f.tell()
+            except Exception:
+                pos = None
+            sample_bytes = f.read(4096)
+            try:
+                if pos is not None:
+                    f.seek(pos)
+            except Exception:
+                pass
+            return sample_bytes
+
         try:
-            self.data = pd.read_csv(fichier, sep="\t")
+            # obtenir un objet file-like et un échantillon (bytes)
+            if isinstance(fichier, str):
+                with open(fichier, "rb") as fh:
+                    sample = _read_sample(fh)
+                fh2 = open(fichier, "rb")
+                file_like = fh2
+            else:
+                # streamlit UploadedFile fournit .getvalue() et file-like methods
+                try:
+                    # si c'est un buffer (BytesIO)
+                    file_like = fichier
+                    sample = _read_sample(file_like)
+                except Exception:
+                    # fallback: lire les bytes
+                    b = fichier.getvalue()
+                    sample = b[:4096]
+                    file_like = io.BytesIO(b)
+
+            text_sample = sample.decode("utf-8", errors="replace") if isinstance(sample, (bytes, bytearray)) else str(sample)
+
+            # essayer csv.Sniffer pour détecter le délimiteur
+            try:
+                dialect = csv.Sniffer().sniff(text_sample, delimiters=[",", "\t", ";", "|"])
+                delim = dialect.delimiter
+            except Exception:
+                # fallback: compter les délimiteurs communs
+                counts = {d: text_sample.count(d) for d in [";", ",", "\t", "|"]}
+                delim = max(counts, key=counts.get)
+
+            # détecter le séparateur décimal — si on a des nombres avec des virgules
+            # mais que le délimiteur n'est pas la virgule, on utilisera decimal=','
+            if re.search(r"\d+,\d+", text_sample) and delim != ",":
+                decimal = ","
+
+            # maintenant lire avec pandas
+            # s'assurer de remettre le pointeur au début
+            try:
+                file_like.seek(0)
+            except Exception:
+                pass
+
+            # pandas accepte les objets file-like (bytes) mais attend du texte; utiliser engine python
+            # pour la détection correcte du séparateur quand nécessaire
+            self.data = pd.read_csv(
+                file_like,
+                sep=delim,
+                decimal=decimal,
+                engine="python",
+            )
+
+            # tentative de parsing automatique de la première colonne en datetime si son nom est Date
+            if "Date" in self.data.columns:
+                try:
+                    self.data["Date"] = pd.to_datetime(self.data["Date"], dayfirst=True, errors="coerce")
+                    # si conversion OK, définir en index
+                    if self.data["Date"].notna().any():
+                        self.data.set_index("Date", inplace=True)
+                except Exception:
+                    pass
+
+            # fermer le fichier si on l'a ouvert nous-mêmes
+            if isinstance(fichier, str):
+                fh2.close()
+
         except Exception as e:
             st.error(f"Erreur lors du chargement des données: {str(e)}")
             self.data = None
@@ -98,21 +183,12 @@ class Page_donnees_v3:
         # Traiter le fichier uploadé
         if uploaded_file is not None:
             try:
-                # Charger le fichier
-                self.data = pd.read_csv(uploaded_file, sep="\t")
-                st.session_state.donnees_v2 = self
+                # Charger le fichier en utilisant la méthode robuste
+                self.load_data(uploaded_file)
+                st.session_state.données = self
                 st.success("Fichier chargé avec succès!")
             except Exception as e:
                 st.error(f"Erreur lors du chargement du fichier: {str(e)}")
-                # Essayer avec d'autres séparateurs
-                try:
-                    self.data = pd.read_csv(uploaded_file, sep=",")
-                    st.session_state.donnees_v2 = self
-                    st.success(
-                        "Fichier chargé avec succès (séparateur détecté: virgule)!"
-                    )
-                except Exception as e2:
-                    st.error(f"Impossible de charger le fichier: {str(e2)}")
 
         # Afficher les données si elles ont été chargées
         if self.data is not None:
