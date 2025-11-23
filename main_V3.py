@@ -40,6 +40,9 @@ st.sidebar.title("Dashboard test Julien Téo Romain V3")
 
 with st.sidebar.expander("Navigation"):
     page = st.selectbox("Choisir une page", ["Données", "Graphiques"])
+    # stocker la page sélectionnée dans la session pour qu'elle soit accessible
+    # depuis d'autres modules (par ex. page_donnees_V3.afficher_page)
+    st.session_state["page"] = page
 
 # Ajouter des lignes et des colonnes
 
@@ -156,7 +159,6 @@ with st.sidebar.expander("Gestion des données graphiqes"):
                 safe_rerun()
 
 # Sauvegarde
-
 st.sidebar.download_button(
     "Télécharger une sauvegarde",
     data=save(graphiques, données),

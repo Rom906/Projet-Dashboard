@@ -217,24 +217,29 @@ class Page_donnees_v3:
         else:
             st.info("Aucune donnée n'a été chargée. Veuillez importer un fichier CSV.")
 
-        st.sidebar.subheader("Importer une sauvegarde")
-        uploaded_file = st.sidebar.file_uploader(
-            "Choisissez un fichier de sauvegarde", type=["json"]
-        )
-        if uploaded_file is not None:
-            sauvegarde_str = uploaded_file.getvalue().decode("utf-8")
-            # Utiliser les instances stockées dans la session si disponibles
-            graphiques_inst = st.session_state.get("graphiques")
-            donnees_inst = st.session_state.get("données", self)
-            if graphiques_inst is None:
-                from page_graphique_V3 import Graphiques
-
-                graphiques_inst = Graphiques()
-            graphiques_inst, donnees_inst = load(
-                sauvegarde_str, graphiques_inst, donnees_inst
+        # Afficher le uploader de sauvegarde dans la sidebar uniquement
+        # si on n'est pas déjà sur la page "Données" (demande utilisateur).
+        current_page = st.session_state.get("page", "")
+        if current_page != "Données":
+            st.sidebar.subheader("Importer une sauvegarde")
+            uploaded_file = st.sidebar.file_uploader(
+                "Choisissez un fichier de sauvegarde", type=["json"]
             )
-            st.session_state.graphiques = graphiques_inst
-            st.session_state.données = donnees_inst
-            self.data = donnees_inst.data
+            if uploaded_file is not None:
+                sauvegarde_str = uploaded_file.getvalue().decode("utf-8")
+                # Utiliser les instances stockées dans la session si disponibles
+                graphiques_inst = st.session_state.get("graphiques")
+                donnees_inst = st.session_state.get("données", self)
+                if graphiques_inst is None:
+                    from page_graphique_V3 import Graphiques
+
+                    graphiques_inst = Graphiques()
+                graphiques_inst, donnees_inst = load(
+                    sauvegarde_str, graphiques_inst, donnees_inst
+                )
+                st.session_state.graphiques = graphiques_inst
+                st.session_state.données = donnees_inst
+                self.data = donnees_inst.data
         else:
+            # quand on est sur la page 'Données', on n'affiche pas l'uploader
             pass
