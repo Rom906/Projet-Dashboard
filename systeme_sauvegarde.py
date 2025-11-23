@@ -38,6 +38,21 @@ def save(page_graphique: Graphiques, page_données: Page_donnees_v3):
 
 def load(sauvegarde_str: str, page_graphique: Graphiques, page_données: Page_donnees_v3):
     sauvegarde = json.loads(sauvegarde_str)
+    # Restaurer d'abord les données brutes si présentes afin de pouvoir reconstruire
+    # les DataFrame des areas ensuite.
+    data_dict = sauvegarde.get("data", {})
+    if data_dict:
+        import pandas as pd
+
+        data_frame = pd.DataFrame(data_dict)
+        page_données.data = data_frame
+        if data_frame.index.name:
+            page_données.data.set_index(data_frame.index.name, inplace=True)
+        else:
+            page_données.data.index.name = None
+    else:
+        page_données.data = None
+
     for ligne_title, ligne_data in sauvegarde.items():
         if ligne_title == "data":
             continue
@@ -81,26 +96,23 @@ def load(sauvegarde_str: str, page_graphique: Graphiques, page_données: Page_do
                     else:
                         # fallback direct
                         df_cols = page_données.data[columns_name].copy()
+
+                    # Si l'abscisse est dans les données globales mais pas dans df_cols,
+                    # la réinsérer temporairement afin de pouvoir la mettre en index.
+                    if (
+                        abscisse_column_name
+                        and abscisse_column_name not in df_cols.columns
+                        and abscisse_column_name in page_données.data.columns
+                    ):
+                        df_cols[abscisse_column_name] = page_données.data[abscisse_column_name]
+
                     # si abscisse définie, la mettre en index
-                    if abscisse_column_name:
-                        if abscisse_column_name in df_cols.columns:
-                            df_cols = df_cols.set_index(abscisse_column_name)
+                    if abscisse_column_name and abscisse_column_name in df_cols.columns:
+                        df_cols = df_cols.set_index(abscisse_column_name)
+
                     area_courante.data = df_cols
                 except Exception:
                     # ne pas planter le chargement si reconstruction des données échoue
                     area_courante.data = None
-
-    data_dict = sauvegarde.get("data", {})
-    if data_dict:
-        import pandas as pd
-
-        data_frame = pd.DataFrame(data_dict)
-        page_données.data = data_frame
-        if data_frame.index.name:
-            page_données.data.set_index(data_frame.index.name, inplace=True)
-        else:
-            page_données.data.index.name = None
-    else:
-        page_données.data = None
 
     return page_graphique, page_données
