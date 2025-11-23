@@ -20,6 +20,7 @@ def safe_rerun() -> None:
         # avec `python main_V3.py`), on ignore silencieusement le rerun.
         return
 
+
 if "graphiques" not in st.session_state:
     st.session_state.graphiques = Graphiques()
 
