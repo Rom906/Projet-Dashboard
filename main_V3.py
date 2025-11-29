@@ -143,8 +143,9 @@ with st.sidebar.expander("Gestion des données graphiqes"):
                 colonnes_données,
                 default=colonnes_deja_séléctionnées,
             )
-            données_affichées = données.get_columns(colonnes_affichées)
-            graphiques.set_datas(nom_ligne_modifiée, nom_area_modifié, données_affichées)  # type: ignore
+            if colonnes_affichées:
+                données_affichées = données.get_columns(colonnes_affichées)
+                graphiques.set_datas(nom_ligne_modifiée, nom_area_modifié, données_affichées)  # type: ignore
             # re-render immediately
             safe_rerun()
 

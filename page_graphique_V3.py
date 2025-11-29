@@ -1,6 +1,8 @@
 import streamlit as st
 from typing import List
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 class Graphiques:
@@ -161,6 +163,7 @@ class Area:
         self.data = data
         self.show_name = show_name
         self.area_name = area_name
+        self.abscisse_column_name = None
         if type(graphic_type) is str:
             self.content_type = self.convert_type(graphic_type)
         elif type(graphic_type) is int:
@@ -170,21 +173,37 @@ class Area:
         return
 
     def render(self) -> None:
-        if self.content_type == self.BARCHART:
-            if self.show_name:
-                st.subheader(self.area_name)
-            st.bar_chart(self.data)
-        elif self.content_type == self.LINECHART:
-            if self.show_name:
-                st.subheader(self.area_name)
-            st.line_chart(self.data)
-        elif self.content_type == self.SCATTER:
-            if self.show_name:
-                st.subheader(self.area_name)
-            st.scatter_chart(self.data)
+        if self.data is not None and self.data is not self.data.empty:
+            if self.content_type == self.BARCHART:
+                if self.show_name:
+                    st.subheader(self.area_name)
+                self.render_barchart()
+            elif self.content_type == self.LINECHART:
+                if self.show_name:
+                    st.subheader(self.area_name)
+                st.line_chart(self.data)
+            elif self.content_type == self.SCATTER:
+                if self.show_name:
+                    st.subheader(self.area_name)
+                st.scatter_chart(self.data)
+
+    def render_barchart(self):
+        fig, ax = plt.subplots()
+        if not self.abscisse_column_name:
+            abscisse = "base_index"
+        else:
+            abscisse = self.abscisse_column_name
+        for column in self.data.columns:  # type: ignore
+            if column == abscisse or column == "base_index":
+                continue
+            sns.histplot(self.data, x=abscisse, y=column, ax=ax)
+        st.pyplot(fig)
 
     def set_data(self, data: pd.DataFrame) -> None:
-        self.data = data
+        if data is not None and data is not data.empty:
+            first_column = data.columns[0]
+            data["base_index"] = range(len(data[first_column]))
+            self.data = data
 
     def set_abscisse_column(self, abscisse_column_name: str):
         if abscisse_column_name:
