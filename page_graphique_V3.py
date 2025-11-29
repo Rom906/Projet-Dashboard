@@ -170,18 +170,22 @@ class Area:
         return
 
     def render(self) -> None:
+        if self.show_name:
+            st.subheader(self.area_name)
+        
+        # Vérifier que les données existent et ne sont pas vides
+        if self.data is None or len(self.data) == 0:
+            st.warning(f"Aucune donnée pour {self.area_name}")
+            return
+        
         if self.content_type == self.BARCHART:
-            if self.show_name:
-                st.subheader(self.area_name)
             st.bar_chart(self.data)
         elif self.content_type == self.LINECHART:
-            if self.show_name:
-                st.subheader(self.area_name)
             st.line_chart(self.data)
         elif self.content_type == self.SCATTER:
-            if self.show_name:
-                st.subheader(self.area_name)
             st.scatter_chart(self.data)
+        elif self.content_type == self.MARKDOWN:
+            st.markdown(self.data)
 
     def set_data(self, data: pd.DataFrame) -> None:
         self.data = data
