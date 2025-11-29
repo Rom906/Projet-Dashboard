@@ -123,6 +123,8 @@ with st.sidebar.expander("Gestion des données graphiqes"):
     nom_ligne_modifiée = st.selectbox(
         "Selectionnez la ligne à modifier", options=graphiques.get_lines_titles()
     )
+    if "nom_ligne_modifiée" not in st.session_state:
+        st.session_state.nom_ligne_modifiée = nom_ligne_modifiée
 
     if nom_ligne_modifiée:
         st.subheader("Choix de la zone graphique à modifier")
@@ -130,35 +132,40 @@ with st.sidebar.expander("Gestion des données graphiqes"):
         nom_area_modifié = st.selectbox(
             "Sélectionnez la zone à modifier", options=graphics_names
         )
+        if "nom_area_modifiée" not in st.session_state:
+            st.session_state.nom_area_modifiée = nom_area_modifié
 
         if nom_area_modifié and nom_ligne_modifiée:
             st.subheader("Paramètres du graphique")
             st.subheader("Choix des données")
             colonnes_données = données.data.columns.to_list()  # type: ignore
-            colonnes_deja_séléctionnées = graphiques.get_area_ploted_columns(
-                nom_ligne_modifiée, nom_area_modifié
-            )
-            colonnes_affichées = st.multiselect(
+            if "colonnes_affichées_default" not in st.session_state:
+                st.session_state.colonnes_affichées_default = graphiques.get_area_ploted_columns(
+                    nom_ligne_modifiée, nom_area_modifié
+                )
+            if st.session_state.nom_area_modifiée != nom_area_modifié or nom_ligne_modifiée != st.session_state.nom_ligne_modifiée:
+                st.session_state.nom_area_modifiée = nom_area_modifié
+                st.session_state.nom_ligne_modifiée = nom_ligne_modifiée
+                st.session_state.colonnes_affichées_default = graphiques.get_area_ploted_columns(
+                    nom_ligne_modifiée, nom_area_modifié
+                )
+            temp_données_affichées = st.multiselect(
                 "Choississez les colonnes utilisées dans le graphique",
                 colonnes_données,
-                default=colonnes_deja_séléctionnées,
+                key="colonnes_affichées_default",
             )
-            if colonnes_affichées:
-                données_affichées = données.get_columns(colonnes_affichées)
-                graphiques.set_datas(nom_ligne_modifiée, nom_area_modifié, données_affichées)  # type: ignore
-            # re-render immediately
-            safe_rerun()
+            données_affichées = données.get_columns(temp_données_affichées)
+            graphiques.set_datas(nom_ligne_modifiée, nom_area_modifié, données_affichées)  # type: ignore
 
-            st.subheader("Choix de l'axe d'abcisse")
+            st.subheader("Choix de l'axe des abscisses")
             colonne_abscisse = st.selectbox(
                 "Séléctionnez la colonne à mettre en axe des abscisses",
-                [""] + colonnes_affichées,
+                [""] + temp_données_affichées,
             )
             if colonne_abscisse:
                 graphiques.set_area_abscisse_column(
                     nom_ligne_modifiée, nom_area_modifié, colonne_abscisse
                 )
-                safe_rerun()
 
 # Sauvegarde
 st.sidebar.download_button(

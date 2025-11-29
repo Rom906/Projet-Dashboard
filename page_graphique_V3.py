@@ -130,7 +130,8 @@ class Ligne:
         for area in self.areas:
             if area.area_name == area_name:
                 if area.data is not None:
-                    return area.data.columns.to_list()
+                    area_data = area.data
+                    return area_data.columns.to_list()
                 else:
                     return []
         return []
@@ -189,20 +190,13 @@ class Area:
 
     def render_barchart(self):
         fig, ax = plt.subplots()
-        if not self.abscisse_column_name:
-            abscisse = "base_index"
-        else:
-            abscisse = self.abscisse_column_name
-        for column in self.data.columns:  # type: ignore
-            if column == abscisse or column == "base_index":
-                continue
-            sns.histplot(self.data, x=abscisse, y=column, ax=ax)
+        data_frame = self.data.melt(var_name="nom_colonne", value_name="values")  # type: ignore
+        data_frame_avec_comptage = data_frame.groupby(["values", "nom_colonne"]).size().reset_index(name="count")
+        sns.barplot(data_frame_avec_comptage, x="values", y="count", hue="nom_colonne", ax=ax, dodge=True)
         st.pyplot(fig)
 
     def set_data(self, data: pd.DataFrame) -> None:
         if data is not None and data is not data.empty:
-            first_column = data.columns[0]
-            data["base_index"] = range(len(data[first_column]))
             self.data = data
 
     def set_abscisse_column(self, abscisse_column_name: str):
