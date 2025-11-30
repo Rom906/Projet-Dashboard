@@ -1,6 +1,6 @@
 import streamlit as st
 from page_donnees_V3 import Page_donnees_v3
-from page_graphique_V3 import Graphiques, Area
+from page_graphique_v4 import Graphiques, Area
 from typing import Dict
 from systeme_sauvegarde import save
 
@@ -170,7 +170,7 @@ with st.sidebar.expander("Gestion des données graphiqes"):
 # Sauvegarde
 st.sidebar.download_button(
     "Télécharger une sauvegarde",
-    data=save(st.session_state.graphiques, st.session_state.données),
+    data=save(st.session_state.graphiques, st.session_state.données),  # type: ignore
     file_name="Sauvegarde_dashboard.json",
     mime="application/json",
 )

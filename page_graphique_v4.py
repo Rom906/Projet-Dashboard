@@ -217,13 +217,14 @@ class Area:
                 return
             else:
                 if self.abscisse_column_name in self.data.columns:
-                    self.data.set_index(self.abscisse_column_name, inplace=True)
+                    self.data.set_index(self.abscisse_column_name, inplace=True, drop=False)
                 else:
                     self.abscisse_column_name = None
 
     def set_abscisse_column(self, abscisse_column_name: str):
-        if abscisse_column_name:
+        if abscisse_column_name in self.data.columns.to_list():  # type: ignore
             self.abscisse_column_name = abscisse_column_name  # type: ignore
+            self.data.set_index(abscisse_column_name, drop=False)  # type: ignore
 
     # à mettre à jour à chaque ajout
     @staticmethod
