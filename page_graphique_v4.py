@@ -186,7 +186,7 @@ class Area:
             elif self.content_type == self.SCATTER:
                 if self.show_name:
                     st.subheader(self.area_name)
-                st.scatter_chart(self.data)
+                self.render_scatter()
 
     def render_barchart(self):
         sns.set_theme(style="darkgrid")
@@ -194,6 +194,7 @@ class Area:
         data_frame = self.data.melt(var_name="nom_colonne", value_name="values")  # type: ignore
         data_frame_avec_comptage = data_frame.groupby(["values", "nom_colonne"]).size().reset_index(name="count")
         sns.barplot(data_frame_avec_comptage, x="values", y="count", hue="nom_colonne", ax=ax, dodge=True)
+        plt.legend()
         st.pyplot(fig)
 
     def render_linechart(self):
@@ -207,6 +208,18 @@ class Area:
         else:
             for column in self.data.columns:  # type: ignore
                 sns.lineplot(x=self.data.index, y=self.data[column], ax=ax)  # type: ignore
+        plt.legend()
+        st.pyplot(fig)
+
+    def render_scatter(self):
+        sns.set_theme(style='darkgrid')
+        fig, ax = plt.subplots()
+        plotted_columns = self.data.columns.to_list()  # type: ignore
+        if self.abscisse_column_name:
+            plotted_columns.remove(self.abscisse_column_name)
+
+        for column in plotted_columns:
+            sns.scatterplot(x=self.data.index, y=self.data[column])  # type: ignore
         plt.legend()
         st.pyplot(fig)
 
