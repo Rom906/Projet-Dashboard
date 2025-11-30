@@ -141,31 +141,9 @@ with st.sidebar.expander("Gestion des données graphiqes"):
                 st.session_state.colonnes_affichées_default = st.session_state.graphiques.get_area_ploted_columns(
                     nom_ligne_modifiée, nom_area_modifiée
                 )
+                st.session_state.colonne_abscisse = st.session_state.graphiques.get_area_abscisse_column_name(nom_ligne_modifiée, nom_area_modifiée)
             # Vérifier que les données sont disponibles
-            if st.session_state.données.data is not None and len(st.session_state.données.data.columns) > 0:
-                st.subheader("Paramètres du graphique")
-                st.subheader("Choix des données")
-                colonnes_données = st.session_state.données.data.columns.to_list()  # type: ignore
-                colonnes_affichées = st.multiselect(
-                    "Choississez les colonnes utilisées dans le graphique",
-                    colonnes_données,
-                    key="colonnes_affichées_default"
-                )
-                if colonnes_affichées:
-                    données_affichées = st.session_state.données.get_columns(colonnes_affichées)
-                    st.session_state.graphiques.set_datas(nom_ligne_modifiée, nom_area_modifiée, données_affichées)  # type: ignore
-
-                    st.subheader("Choix de l'axe d'abcisse")
-                    colonne_abscisse = st.selectbox(
-                        "Séléctionnez la colonne à mettre en axe des abscisses",
-                        [""] + colonnes_affichées,
-                    )
-                    if colonne_abscisse:
-                        st.session_state.graphiques.set_area_abscisse_column(
-                            nom_ligne_modifiée, nom_area_modifiée, colonne_abscisse
-                        )
-            else:
-                st.warning("Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'.")
+            st.session_state.graphiques.render_area_sidebar_options(nom_ligne_modifiée, nom_area_modifiée)
 
 # Sauvegarde
 st.sidebar.download_button(

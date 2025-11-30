@@ -5,6 +5,19 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
+def safe_rerun() -> None:
+    """Appelle st.experimental_rerun() quand l'application est lancée par
+    Streamlit; ignore proprement l'appel quand le script est exécuté avec
+    `python main_V3.py` (mode "bare"), empêchant une exception non souhaitée.
+    """
+    try:
+        st.rerun()
+    except Exception:
+        # Si on est hors du contexte Streamlit (par ex. execution directe
+        # avec `python main_V3.py`), on ignore silencieusement le rerun.
+        return
+
+
 class Graphiques:
     def __init__(self) -> None:
         self.datas = {}
@@ -74,6 +87,12 @@ class Graphiques:
                 return line.get_area_plotted_columns(area_name)
         return []
 
+    def get_area_abscisse_column_name(self, line_title: str, area_name: str) -> str | None:
+        for line in self.lines:
+            if line.title == line_title:
+                line.get_area_abscisse_column_name(area_name)
+                return
+
     def get_line_areas_names(self, line_title: str) -> List[str]:
         for line in self.lines:
             if line.title == line_title:
@@ -85,6 +104,12 @@ class Graphiques:
             if self.lines[i].title == line_title:
                 return i
         return None
+
+    def render_area_sidebar_options(self, line_title: str, area_name: str):
+        for line in self.lines:
+            if line.title == line_title:
+                line.render_area_sidebar_options(area_name)
+                return
 
 
 class Ligne:
@@ -136,6 +161,11 @@ class Ligne:
                     return []
         return []
 
+    def get_area_abscisse_column_name(self, area_name: str) -> str | None:
+        for area in self.areas:
+            if area.area_name == area_name:
+                return area.abscisse_column_name
+
     def set_data(self, area_name: str, data: pd.DataFrame) -> None:
         for area in self.areas:
             if area.area_name == area_name:
@@ -146,6 +176,12 @@ class Ligne:
         for area in self.areas:
             if area.area_name == area_name:
                 area.set_abscisse_column(abscisse_column_name)
+
+    def render_area_sidebar_options(self, area_name):
+        for area in self.areas:
+            if area.area_name == area_name:
+                area.render_sidebar_options()
+                return
 
 
 class Area:
@@ -194,7 +230,6 @@ class Area:
         data_frame = self.data.melt(var_name="nom_colonne", value_name="values")  # type: ignore
         data_frame_avec_comptage = data_frame.groupby(["values", "nom_colonne"]).size().reset_index(name="count")
         sns.barplot(data_frame_avec_comptage, x="values", y="count", hue="nom_colonne", ax=ax, dodge=True)
-        plt.legend()
         st.pyplot(fig)
 
     def render_linechart(self):
@@ -208,7 +243,6 @@ class Area:
         else:
             for column in self.data.columns:  # type: ignore
                 sns.lineplot(x=self.data.index, y=self.data[column], ax=ax)  # type: ignore
-        plt.legend()
         st.pyplot(fig)
 
     def render_scatter(self):
@@ -217,10 +251,12 @@ class Area:
         plotted_columns = self.data.columns.to_list()  # type: ignore
         if self.abscisse_column_name:
             plotted_columns.remove(self.abscisse_column_name)
+            abscisse = self.data[self.abscisse_column_name]  # type: ignore
+        else:
+            abscisse = self.data.index  # type: ignore
 
         for column in plotted_columns:
-            sns.scatterplot(x=self.data.index, y=self.data[column])  # type: ignore
-        plt.legend()
+            sns.scatterplot(x=abscisse, y=self.data[column])  # type: ignore
         st.pyplot(fig)
 
     def set_data(self, data: pd.DataFrame) -> None:
@@ -234,10 +270,14 @@ class Area:
                 else:
                     self.abscisse_column_name = None
 
-    def set_abscisse_column(self, abscisse_column_name: str):
+    def set_abscisse_column(self, abscisse_column_name: str | None):
+        if abscisse_column_name is None:
+            self.abscisse_column_name = None
+            self.data.reset_index(drop=True, inplace=True)  # type: ignore
+            self.data.index.name = "Index par défaut"  # type: ignore
         if abscisse_column_name in self.data.columns.to_list():  # type: ignore
             self.abscisse_column_name = abscisse_column_name  # type: ignore
-            self.data.set_index(abscisse_column_name, drop=False)  # type: ignore
+            self.data.set_index(abscisse_column_name, drop=False, inplace=True)  # type: ignore
 
     # à mettre à jour à chaque ajout
     @staticmethod
@@ -256,3 +296,101 @@ class Area:
     @staticmethod
     def get_types() -> List[str]:
         return ["Histogramme", "Courbe", "Nuage de points", "Markdown"]
+
+    def render_sidebar_options(self):
+        if self.content_type == Area.BARCHART:
+            self.render_sidebar_options_barchart()
+        elif self.content_type == Area.LINECHART:
+            self.render_sidebar_options_linechart()
+        elif self.content_type == Area.SCATTER:
+            self.render_sidebar_options_scatter()
+
+    def render_sidebar_options_barchart(self):
+        if st.session_state.données.data is not None and len(st.session_state.données.data.columns) > 0:
+            st.subheader("Paramètres du graphique")
+            st.subheader("Choix des données")
+            colonnes_données = st.session_state.données.data.columns.to_list()  # type: ignore
+            colonnes_affichées = st.multiselect(
+                "Choississez les colonnes utilisées dans le graphique",
+                colonnes_données,
+                key="colonnes_affichées_default"
+            )
+            if colonnes_affichées:
+                données_affichées = st.session_state.données.get_columns(colonnes_affichées)
+                self.set_data(données_affichées)  # type: ignore
+        else:
+            st.warning("Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'.")
+
+    def render_sidebar_options_linechart(self):
+        if st.session_state.données.data is not None and len(st.session_state.données.data.columns) > 0:
+            st.subheader("Paramètres du graphique")
+            st.subheader("Choix des données")
+            colonnes_données = st.session_state.données.data.columns.to_list()  # type: ignore
+            colonnes_affichées = st.multiselect(
+                "Choississez les colonnes utilisées dans le graphique",
+                colonnes_données,
+                key="colonnes_affichées_default"
+            )
+            if colonnes_affichées:
+                données_affichées = st.session_state.données.get_columns(colonnes_affichées)
+                self.set_data(données_affichées)  # type: ignore
+
+                st.subheader("Choix de l'axe d'abcisse")
+                if self.abscisse_column_name is not None:
+                    colonnes_affichées.remove(self.abscisse_column_name)
+                    nouvelle_abscisse = st.selectbox(
+                        "Séléctionnez la colonne à mettre en axe des abscisses",
+                        [self.abscisse_column_name] + ["Index par défaut"] + colonnes_affichées,
+                    )
+                else:
+                    nouvelle_abscisse = st.selectbox(
+                        "Séléctionnez la colonne à mettre en axe des abscisses",
+                        ["Index par défaut"] + colonnes_affichées,
+                    )
+                if nouvelle_abscisse != st.session_state.colonne_abscisse:
+                    if st.session_state.colonne_abscisse is not None:
+                        self.set_abscisse_column(nouvelle_abscisse)
+                        st.session_state.colonne_abscisse = nouvelle_abscisse
+                    else:
+                        self.set_abscisse_column(None)
+                        st.session_state.colonne_abscisse = None
+                    safe_rerun()
+        else:
+            st.warning("Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'.")
+
+    def render_sidebar_options_scatter(self):
+        if st.session_state.données.data is not None and len(st.session_state.données.data.columns) > 0:
+            st.subheader("Paramètres du graphique")
+            st.subheader("Choix des données")
+            colonnes_données = st.session_state.données.data.columns.to_list()  # type: ignore
+            colonnes_affichées = st.multiselect(
+                "Choississez les colonnes utilisées dans le graphique",
+                colonnes_données,
+                key="colonnes_affichées_default"
+            )
+            if colonnes_affichées:
+                données_affichées = st.session_state.données.get_columns(colonnes_affichées)
+                self.set_data(données_affichées)  # type: ignore
+
+                st.subheader("Choix de l'axe d'abcisse")
+                if self.abscisse_column_name is not None:
+                    colonnes_affichées.remove(self.abscisse_column_name)
+                    nouvelle_abscisse = st.selectbox(
+                        "Séléctionnez la colonne à mettre en axe des abscisses",
+                        [self.abscisse_column_name] + ["Index par défaut"] + colonnes_affichées,
+                    )
+                else:
+                    nouvelle_abscisse = st.selectbox(
+                        "Séléctionnez la colonne à mettre en axe des abscisses",
+                        ["Index par défaut"] + colonnes_affichées,
+                    )
+                if nouvelle_abscisse != st.session_state.colonne_abscisse:
+                    if st.session_state.colonne_abscisse != "Index par défaut":
+                        self.set_abscisse_column(nouvelle_abscisse)
+                        st.session_state.colonne_abscisse = nouvelle_abscisse
+                    else:
+                        self.set_abscisse_column(None)
+                        st.session_state.colonne_abscisse = "Index par défaut"
+                    safe_rerun()
+        else:
+            st.warning("Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'.")
