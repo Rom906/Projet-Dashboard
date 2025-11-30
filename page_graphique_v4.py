@@ -348,12 +348,12 @@ class Area:
                         ["Index par défaut"] + colonnes_affichées,
                     )
                 if nouvelle_abscisse != st.session_state.colonne_abscisse:
-                    if st.session_state.colonne_abscisse is not None:
+                    if nouvelle_abscisse != "Index par défaut":
                         self.set_abscisse_column(nouvelle_abscisse)
                         st.session_state.colonne_abscisse = nouvelle_abscisse
                     else:
                         self.set_abscisse_column(None)
-                        st.session_state.colonne_abscisse = None
+                        st.session_state.colonne_abscisse = "Index par défaut"
                     safe_rerun()
         else:
             st.warning("Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'.")
@@ -385,7 +385,7 @@ class Area:
                         ["Index par défaut"] + colonnes_affichées,
                     )
                 if nouvelle_abscisse != st.session_state.colonne_abscisse:
-                    if st.session_state.colonne_abscisse != "Index par défaut":
+                    if nouvelle_abscisse != "Index par défaut":
                         self.set_abscisse_column(nouvelle_abscisse)
                         st.session_state.colonne_abscisse = nouvelle_abscisse
                     else:
