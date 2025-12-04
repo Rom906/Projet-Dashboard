@@ -1,4 +1,4 @@
-from page_graphique_v4 import Graphiques
+from page_graphique_v4 import Graphiques, Area
 from page_donnees_V3 import Page_donnees_v3
 import json
 
@@ -95,6 +95,9 @@ def load(
                     area_data.get("content_type", 4),
                     None,
                 )
+                if area_data["content_type"] == Area.MARKDOWN:
+                    ligne_courante.areas[area_index].text = area_data["text"]
+                    ligne_courante.areas[area_index].input_mode = False
 
             area_courante = ligne_courante.areas[area_index]
             area_courante.area_name = area_name
