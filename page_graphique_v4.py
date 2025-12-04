@@ -87,7 +87,9 @@ class Graphiques:
                 return line.get_area_plotted_columns(area_name)
         return []
 
-    def get_area_abscisse_column_name(self, line_title: str, area_name: str) -> str | None:
+    def get_area_abscisse_column_name(
+        self, line_title: str, area_name: str
+    ) -> str | None:
         for line in self.lines:
             if line.title == line_title:
                 line.get_area_abscisse_column_name(area_name)
@@ -207,9 +209,17 @@ class Area:
             self.content_type = graphic_type
         else:
             raise TypeError("mauvais type de type de graphique entré")
+
+        if self.content_type == self.MARKDOWN:
+            self.input_mode = True
+            self.text = None
         return
 
     def render(self) -> None:
+        if self.content_type == self.MARKDOWN:
+            if self.show_name:
+                st.subheader(self.area_name)
+            self.render_markdown()
         if self.data is not None and not self.data.empty:
             if self.content_type == self.BARCHART:
                 if self.show_name:
@@ -228,8 +238,19 @@ class Area:
         sns.set_theme(style="darkgrid")
         fig, ax = plt.subplots()
         data_frame = self.data.melt(var_name="nom_colonne", value_name="values")  # type: ignore
-        data_frame_avec_comptage = data_frame.groupby(["values", "nom_colonne"]).size().reset_index(name="count")
-        sns.barplot(data_frame_avec_comptage, x="values", y="count", hue="nom_colonne", ax=ax, dodge=True)
+        data_frame_avec_comptage = (
+            data_frame.groupby(["values", "nom_colonne"])
+            .size()
+            .reset_index(name="count")
+        )
+        sns.barplot(
+            data_frame_avec_comptage,
+            x="values",
+            y="count",
+            hue="nom_colonne",
+            ax=ax,
+            dodge=True,
+        )
         st.pyplot(fig)
 
     def render_linechart(self):
@@ -246,7 +267,7 @@ class Area:
         st.pyplot(fig)
 
     def render_scatter(self):
-        sns.set_theme(style='darkgrid')
+        sns.set_theme(style="darkgrid")
         fig, ax = plt.subplots()
         plotted_columns = self.data.columns.to_list()  # type: ignore
         if self.abscisse_column_name:
@@ -259,6 +280,14 @@ class Area:
             sns.scatterplot(x=abscisse, y=self.data[column])  # type: ignore
         st.pyplot(fig)
 
+    def render_markdown(self):
+        if self.input_mode:
+            self.text = st.text_area(
+                "Entrez votre texte en Markdown", value=self.text, height=400
+            )
+        else:
+            st.markdown(self.text)
+
     def set_data(self, data: pd.DataFrame) -> None:
         if data is not None and not data.empty:
             self.data = data
@@ -266,7 +295,9 @@ class Area:
                 return
             else:
                 if self.abscisse_column_name in self.data.columns:
-                    self.data.set_index(self.abscisse_column_name, inplace=True, drop=False)
+                    self.data.set_index(
+                        self.abscisse_column_name, inplace=True, drop=False
+                    )
                 else:
                     self.abscisse_column_name = None
 
@@ -304,35 +335,49 @@ class Area:
             self.render_sidebar_options_linechart()
         elif self.content_type == Area.SCATTER:
             self.render_sidebar_options_scatter()
+        elif self.content_type == Area.MARKDOWN:
+            self.render_sidebar_options_markdown()
 
     def render_sidebar_options_barchart(self):
-        if st.session_state.données.data is not None and len(st.session_state.données.data.columns) > 0:
+        if (
+            st.session_state.données.data is not None
+            and len(st.session_state.données.data.columns) > 0
+        ):
             st.subheader("Paramètres du graphique")
             st.subheader("Choix des données")
             colonnes_données = st.session_state.données.data.columns.to_list()  # type: ignore
             colonnes_affichées = st.multiselect(
                 "Choississez les colonnes utilisées dans le graphique",
                 colonnes_données,
-                key="colonnes_affichées_default"
+                key="colonnes_affichées_default",
             )
             if colonnes_affichées:
-                données_affichées = st.session_state.données.get_columns(colonnes_affichées)
+                données_affichées = st.session_state.données.get_columns(
+                    colonnes_affichées
+                )
                 self.set_data(données_affichées)  # type: ignore
         else:
-            st.warning("Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'.")
+            st.warning(
+                "Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'."
+            )
 
     def render_sidebar_options_linechart(self):
-        if st.session_state.données.data is not None and len(st.session_state.données.data.columns) > 0:
+        if (
+            st.session_state.données.data is not None
+            and len(st.session_state.données.data.columns) > 0
+        ):
             st.subheader("Paramètres du graphique")
             st.subheader("Choix des données")
             colonnes_données = st.session_state.données.data.columns.to_list()  # type: ignore
             colonnes_affichées = st.multiselect(
                 "Choississez les colonnes utilisées dans le graphique",
                 colonnes_données,
-                key="colonnes_affichées_default"
+                key="colonnes_affichées_default",
             )
             if colonnes_affichées:
-                données_affichées = st.session_state.données.get_columns(colonnes_affichées)
+                données_affichées = st.session_state.données.get_columns(
+                    colonnes_affichées
+                )
                 self.set_data(données_affichées)  # type: ignore
 
                 st.subheader("Choix de l'axe d'abcisse")
@@ -340,7 +385,9 @@ class Area:
                     colonnes_affichées.remove(self.abscisse_column_name)
                     nouvelle_abscisse = st.selectbox(
                         "Séléctionnez la colonne à mettre en axe des abscisses",
-                        [self.abscisse_column_name] + ["Index par défaut"] + colonnes_affichées,
+                        [self.abscisse_column_name]
+                        + ["Index par défaut"]
+                        + colonnes_affichées,
                     )
                 else:
                     nouvelle_abscisse = st.selectbox(
@@ -356,20 +403,27 @@ class Area:
                         st.session_state.colonne_abscisse = "Index par défaut"
                     safe_rerun()
         else:
-            st.warning("Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'.")
+            st.warning(
+                "Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'."
+            )
 
     def render_sidebar_options_scatter(self):
-        if st.session_state.données.data is not None and len(st.session_state.données.data.columns) > 0:
+        if (
+            st.session_state.données.data is not None
+            and len(st.session_state.données.data.columns) > 0
+        ):
             st.subheader("Paramètres du graphique")
             st.subheader("Choix des données")
             colonnes_données = st.session_state.données.data.columns.to_list()  # type: ignore
             colonnes_affichées = st.multiselect(
                 "Choississez les colonnes utilisées dans le graphique",
                 colonnes_données,
-                key="colonnes_affichées_default"
+                key="colonnes_affichées_default",
             )
             if colonnes_affichées:
-                données_affichées = st.session_state.données.get_columns(colonnes_affichées)
+                données_affichées = st.session_state.données.get_columns(
+                    colonnes_affichées
+                )
                 self.set_data(données_affichées)  # type: ignore
 
                 st.subheader("Choix de l'axe d'abcisse")
@@ -377,7 +431,9 @@ class Area:
                     colonnes_affichées.remove(self.abscisse_column_name)
                     nouvelle_abscisse = st.selectbox(
                         "Séléctionnez la colonne à mettre en axe des abscisses",
-                        [self.abscisse_column_name] + ["Index par défaut"] + colonnes_affichées,
+                        [self.abscisse_column_name]
+                        + ["Index par défaut"]
+                        + colonnes_affichées,
                     )
                 else:
                     nouvelle_abscisse = st.selectbox(
@@ -393,4 +449,14 @@ class Area:
                         st.session_state.colonne_abscisse = "Index par défaut"
                     safe_rerun()
         else:
-            st.warning("Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'.")
+            st.warning(
+                "Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'."
+            )
+
+    def render_sidebar_options_markdown(self):
+        if self.input_mode:
+            label = "Arrêter de modifier"
+        else:
+            label = "Modifier le texte"
+        if st.button(label):
+            self.input_mode = not self.input_mode

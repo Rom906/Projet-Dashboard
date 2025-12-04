@@ -58,7 +58,9 @@ with st.sidebar.expander("Ajouter des zones"):
         elif titre_nouvelle_ligne in st.session_state.graphiques.get_lines_titles():
             st.text("Il y a déjà une ligne ayant ce nom")
         else:
-            st.session_state.graphiques.add_line(titre_nouvelle_ligne, afficher_titre_ligne)
+            st.session_state.graphiques.add_line(
+                titre_nouvelle_ligne, afficher_titre_ligne
+            )
             # forcer un rerun pour mettre à jour l'affichage immédiatement
             safe_rerun()
 
@@ -84,7 +86,9 @@ with st.sidebar.expander("Ajouter des zones"):
             if not type_graphique:
                 st.error("Aucun type de graphique séléctionné")
             else:
-                line_index = st.session_state.graphiques.get_line_index(titre_ligne_modifiée)
+                line_index = st.session_state.graphiques.get_line_index(
+                    titre_ligne_modifiée
+                )
                 if line_index is None:
                     st.error("Erreur interne, voir développeurs")
                 st.session_state.graphiques.add_area(line_index, titre_nouvelle_zone, type_graphique, show_name=afficher_titre_zone)  # type: ignore
@@ -108,7 +112,9 @@ with st.sidebar.expander("Retirer des zones"):
         "Séléctionnez la ligne contenant la zone à supprimer", lines_names
     )
     if ligne_selectionnée:
-        areas_name = st.session_state.graphiques.get_line_areas_names(ligne_selectionnée)
+        areas_name = st.session_state.graphiques.get_line_areas_names(
+            ligne_selectionnée
+        )
         area_supprimée = st.selectbox("Choisissez la zone à supprimer", areas_name)
         if st.button("Supprimer la zone"):
             st.session_state.graphiques.delete_area(ligne_selectionnée, area_supprimée)
@@ -120,14 +126,17 @@ with st.sidebar.expander("Retirer des zones"):
 with st.sidebar.expander("Gestion des données graphiqes"):
     st.subheader("Choix de la ligne à modifier")
     nom_ligne_modifiée = st.selectbox(
-        "Selectionnez la ligne à modifier", options=st.session_state.graphiques.get_lines_titles()
+        "Selectionnez la ligne à modifier",
+        options=st.session_state.graphiques.get_lines_titles(),
     )
     if "nom_ligne_modifiée" not in st.session_state:
         st.session_state.nom_ligne_modifiée = nom_ligne_modifiée
 
     if nom_ligne_modifiée:
         st.subheader("Choix de la zone graphique à modifier")
-        graphics_names = st.session_state.graphiques.get_line_areas_names(nom_ligne_modifiée)
+        graphics_names = st.session_state.graphiques.get_line_areas_names(
+            nom_ligne_modifiée
+        )
         nom_area_modifiée = st.selectbox(
             "Sélectionnez la zone à modifier", options=graphics_names
         )
@@ -135,15 +144,26 @@ with st.sidebar.expander("Gestion des données graphiqes"):
             st.session_state.nom_area_modifiée = nom_area_modifiée
 
         if nom_area_modifiée and nom_ligne_modifiée:
-            if nom_ligne_modifiée != st.session_state.nom_ligne_modifiée or nom_area_modifiée != st.session_state.nom_area_modifiée:
+            if (
+                nom_ligne_modifiée != st.session_state.nom_ligne_modifiée
+                or nom_area_modifiée != st.session_state.nom_area_modifiée
+            ):
                 st.session_state.nom_ligne_modifiée = nom_ligne_modifiée
                 st.session_state.nom_area_modifiée = nom_area_modifiée
-                st.session_state.colonnes_affichées_default = st.session_state.graphiques.get_area_ploted_columns(
-                    nom_ligne_modifiée, nom_area_modifiée
+                st.session_state.colonnes_affichées_default = (
+                    st.session_state.graphiques.get_area_ploted_columns(
+                        nom_ligne_modifiée, nom_area_modifiée
+                    )
                 )
-                st.session_state.colonne_abscisse = st.session_state.graphiques.get_area_abscisse_column_name(nom_ligne_modifiée, nom_area_modifiée)
+                st.session_state.colonne_abscisse = (
+                    st.session_state.graphiques.get_area_abscisse_column_name(
+                        nom_ligne_modifiée, nom_area_modifiée
+                    )
+                )
             # Vérifier que les données sont disponibles
-            st.session_state.graphiques.render_area_sidebar_options(nom_ligne_modifiée, nom_area_modifiée)
+            st.session_state.graphiques.render_area_sidebar_options(
+                nom_ligne_modifiée, nom_area_modifiée
+            )
 
 # Sauvegarde
 st.sidebar.download_button(

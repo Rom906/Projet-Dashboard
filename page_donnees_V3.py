@@ -51,11 +51,17 @@ class Page_donnees_v3:
                     sample = b[:4096]
                     file_like = io.BytesIO(b)
 
-            text_sample = sample.decode("utf-8", errors="replace") if isinstance(sample, (bytes, bytearray)) else str(sample)
+            text_sample = (
+                sample.decode("utf-8", errors="replace")
+                if isinstance(sample, (bytes, bytearray))
+                else str(sample)
+            )
 
             # essayer csv.Sniffer pour détecter le délimiteur
             try:
-                dialect = csv.Sniffer().sniff(text_sample, delimiters=[",", "\t", ";", "|"])
+                dialect = csv.Sniffer().sniff(
+                    text_sample, delimiters=[",", "\t", ";", "|"]
+                )
                 delim = dialect.delimiter
             except Exception:
                 # fallback: compter les délimiteurs communs
@@ -86,7 +92,9 @@ class Page_donnees_v3:
             # tentative de parsing automatique de la première colonne en datetime si son nom est Date
             if "Date" in self.data.columns:
                 try:
-                    self.data["Date"] = pd.to_datetime(self.data["Date"], dayfirst=True, errors="coerce")
+                    self.data["Date"] = pd.to_datetime(
+                        self.data["Date"], dayfirst=True, errors="coerce"
+                    )
                     # si conversion OK, définir en index
                     if self.data["Date"].notna().any():
                         self.data.set_index("Date", inplace=True)
@@ -144,10 +152,10 @@ class Page_donnees_v3:
 
     def get_lines(self, lines_indices: List[int]):
         """Récupère des lignes spécifiques du DataFrame à partir de leurs indices
-        
+
         Args:
             lines_indices (List[int]): Liste des indices des lignes à récupérer
-            
+
         Returns:
             pd.DataFrame: DataFrame contenant uniquement les lignes demandées
         """
@@ -157,7 +165,7 @@ class Page_donnees_v3:
 
     def add_row(self, row_data: dict):
         """Ajoute une nouvelle ligne au DataFrame
-        
+
         Args:
             row_data (dict): Dictionnaire contenant les données de la nouvelle ligne
                             Les clés doivent correspondre aux colonnes existantes
@@ -176,7 +184,7 @@ class Page_donnees_v3:
 
     def edit_row(self, row_index: int, row_data: dict):
         """Modifie une ligne existante du DataFrame
-        
+
         Args:
             row_index (int): Index de la ligne à modifier
             row_data (dict): Dictionnaire contenant les données mises à jour
@@ -192,7 +200,7 @@ class Page_donnees_v3:
 
     def delete_row(self, row_index: int):
         """Supprime une ligne du DataFrame
-        
+
         Args:
             row_index (int): Index de la ligne à supprimer
         """
@@ -208,7 +216,7 @@ class Page_donnees_v3:
         if self.data is not None:
             try:
                 import json
-                
+
                 # Créer un dictionnaire sérializable avec gestion complète des types
                 data_dict = {}
                 for col in self.data.columns:
@@ -221,46 +229,55 @@ class Page_donnees_v3:
                         elif isinstance(val, (int, float, str, bool)):
                             col_data.append(val)
                         # Gérer numpy types
-                        elif hasattr(val, 'item'):  # numpy types
+                        elif hasattr(val, "item"):  # numpy types
                             col_data.append(val.item())
                         # Fallback: convertir en string
                         else:
                             col_data.append(str(val))
                     data_dict[col] = col_data
-                
+
                 # Sauvegarder en JSON en session state (JSON valide avec null au lieu de NaN)
                 json_str = json.dumps(data_dict, ensure_ascii=False)
                 st.session_state["données_backup_json"] = json_str
             except Exception as e:
                 import traceback
+
                 st.write(f"❌ Erreur sauvegarde JSON: {e}")
-    
+
     def _load_from_session_state(self):
         """Recharge les données depuis le JSON sauvegardé en session state"""
-        if "données_backup_json" in st.session_state and st.session_state["données_backup_json"]:
+        if (
+            "données_backup_json" in st.session_state
+            and st.session_state["données_backup_json"]
+        ):
             try:
                 import json
+
                 json_str = st.session_state["données_backup_json"]
                 if not json_str or json_str == "":
                     return
-                
+
                 data_dict = json.loads(json_str)
                 new_data = pd.DataFrame(data_dict)
-                
+
                 if not new_data.empty:
                     self.data = new_data
             except json.JSONDecodeError as e:
                 import traceback
+
                 st.write(f"❌ Erreur JSON invalide lors du chargement")
                 st.write(f"Erreur: {e}")
             except Exception as e:
                 import traceback
+
                 st.write(f"❌ Erreur lors du chargement des données")
                 st.write(f"Erreur: {e}")
 
-    def add_column_from_operation(self, column_name: str, operation: str, column_operand: str):
+    def add_column_from_operation(
+        self, column_name: str, operation: str, column_operand: str
+    ):
         """Crée une nouvelle colonne calculée à partir d'une opération statistique
-        
+
         Args:
             column_name (str): Nom de la nouvelle colonne
             operation (str): Type d'opération ('somme', 'moyenne', 'médiane', 'écart_type', 'variance')
@@ -322,14 +339,15 @@ class Page_donnees_v3:
 
     def afficher_page(self):
         from systeme_sauvegarde import load
+
         """Affiche la page avec les données et le drag and drop"""
         # ÉTAPE CRITIQUE : Recharger les données depuis le backup JSON en session state
         # Ceci garantit que les modifications précédentes persisteront
         self._load_from_session_state()
-        
+
         # SYNCHRONISER SELF avec ST.SESSION_STATE
         st.session_state["données"] = self
-        
+
         st.title(self.titre)
 
         # Zone de drag and drop pour importer un fichier CSV
@@ -370,6 +388,7 @@ class Page_donnees_v3:
             if self.data is not None:
                 try:
                     import json
+
                     data_dict = {}
                     for col in self.data.columns:
                         col_data = []
@@ -378,12 +397,14 @@ class Page_donnees_v3:
                                 col_data.append(None)
                             elif isinstance(val, (int, float, str, bool)):
                                 col_data.append(val)
-                            elif hasattr(val, 'item'):  # numpy types
+                            elif hasattr(val, "item"):  # numpy types
                                 col_data.append(val.item())
                             else:
                                 col_data.append(str(val))
                         data_dict[col] = col_data
-                    st.session_state["données_backup_json"] = json.dumps(data_dict, ensure_ascii=False)
+                    st.session_state["données_backup_json"] = json.dumps(
+                        data_dict, ensure_ascii=False
+                    )
                     st.write(f"✅ Sauvegarde importée: {len(data_dict)} colonnes")
                 except Exception as e:
                     st.write(f"❌ Erreur création backup JSON: {e}")
@@ -391,7 +412,7 @@ class Page_donnees_v3:
         if uploaded_file is not None:
             # Créer une clé unique pour ce fichier pour tracker s'il a déjà été chargé
             file_key = f"loaded_file_{uploaded_file.name}_{uploaded_file.size}"
-            
+
             # Ne charger que si ce fichier n'a pas déjà été traité
             if file_key not in st.session_state or not st.session_state[file_key]:
                 try:
@@ -400,7 +421,9 @@ class Page_donnees_v3:
                     # Sauvegarder immédiatement en session state
                     self._save_to_session_state()
                     st.session_state[file_key] = True  # Marquer comme chargé
-                    st.write(f"✅ CSV importé: {len(self.data)} lignes, {len(self.data.columns)} colonnes")
+                    st.write(
+                        f"✅ CSV importé: {len(self.data)} lignes, {len(self.data.columns)} colonnes"
+                    )
                 except Exception as e:
                     st.write(f"❌ Erreur lors du chargement du fichier: {str(e)}")
 
@@ -408,23 +431,28 @@ class Page_donnees_v3:
 
         # Section Créer ou modifier des données
         st.subheader("Ajouter une nouvelle ligne")
-        
+
         # Initialiser le compteur de resets si nécessaire
         if "add_row_counter" not in st.session_state:
             st.session_state.add_row_counter = 0
-        
+
         if self.data is None:
-            st.info("Aucune donnée. Veuillez d'abord importer un fichier CSV ou créer des données.")
+            st.info(
+                "Aucune donnée. Veuillez d'abord importer un fichier CSV ou créer des données."
+            )
         else:
             colonnes = self.data.columns.to_list()
             col_inputs = st.columns(len(colonnes))
             row_data = {}
-            
+
             # Utiliser le compteur dans les clés pour forcer le reset après chaque ajout
             for idx, col in enumerate(colonnes):
                 with col_inputs[idx]:
-                    row_data[col] = st.text_input(f"{col}", key=f"new_row_{col}_{st.session_state.add_row_counter}")
-            
+                    row_data[col] = st.text_input(
+                        f"{col}",
+                        key=f"new_row_{col}_{st.session_state.add_row_counter}",
+                    )
+
             if st.button("➕ Ajouter la ligne"):
                 try:
                     # Tenter de convertir les valeurs au type approprié
@@ -439,7 +467,7 @@ class Page_donnees_v3:
                             except ValueError:
                                 # Garder comme string si ce n'est pas un nombre
                                 converted_data[col] = val
-                    
+
                     self.add_row(converted_data)
                     st.session_state.add_row_counter += 1
                     st.write("✅ Ligne ajoutée avec succès!")
@@ -451,6 +479,7 @@ class Page_donnees_v3:
                 except Exception as e:
                     st.error(f"❌ Erreur lors de l'ajout de la ligne: {str(e)}")
                     import traceback
+
                     st.error(traceback.format_exc())
 
         st.divider()
@@ -474,19 +503,19 @@ class Page_donnees_v3:
 
             # Afficher les données dans un tableau interactif
             st.subheader("Tableau de données")
-            st.dataframe(self.data, width='stretch')
+            st.dataframe(self.data, width="stretch")
 
             # Ajouter des statistiques de base
             st.subheader("Statistiques descriptives")
-            st.dataframe(self.data.describe(), width='stretch')
+            st.dataframe(self.data.describe(), width="stretch")
 
             # Section pour gérer les lignes
             st.subheader("Gérer les lignes")
-            
+
             # Initialiser la session state pour l'action sélectionnée
             if "selected_action" not in st.session_state:
                 st.session_state.selected_action = "Afficher"
-            
+
             # Utiliser des boutons au lieu d'un radio pour éviter les reruns automatiques
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -498,18 +527,18 @@ class Page_donnees_v3:
             with col3:
                 if st.button("🗑️ Supprimer une ligne", use_container_width=True):
                     st.session_state.selected_action = "Supprimer une ligne"
-            
+
             # Initialiser les compteurs de resets si nécessaire
             if "edit_row_counter" not in st.session_state:
                 st.session_state.edit_row_counter = 0
             if "delete_row_counter" not in st.session_state:
                 st.session_state.delete_row_counter = 0
-            
+
             action = st.session_state.selected_action
-            
+
             if action == "Afficher":
                 st.write("**Sélectionner des lignes à afficher**")
-                
+
                 # Option 1: Sélection par plage
                 st.write("**Option 1 : Sélectionner une plage**")
                 col1, col2 = st.columns(2)
@@ -519,7 +548,7 @@ class Page_donnees_v3:
                         min_value=0,
                         max_value=len(self.data) - 1,
                         value=0,
-                        key="start_range"
+                        key="start_range",
                     )
                 with col2:
                     end_index = st.number_input(
@@ -527,60 +556,62 @@ class Page_donnees_v3:
                         min_value=start_index,
                         max_value=len(self.data) - 1,
                         value=min(start_index + 4, len(self.data) - 1),
-                        key="end_range"
+                        key="end_range",
                     )
-                
+
                 if st.button("📊 Afficher la plage"):
-                    selected_lines = self.get_lines(list(range(start_index, end_index + 1)))
-                    st.dataframe(selected_lines, width='stretch')
-                
+                    selected_lines = self.get_lines(
+                        list(range(start_index, end_index + 1))
+                    )
+                    st.dataframe(selected_lines, width="stretch")
+
                 st.divider()
-                
+
                 # Option 2: Sélection individuelle
                 st.write("**Option 2 : Sélectionner des lignes individuelles**")
                 indices = st.multiselect(
                     "Choisissez les indices des lignes à afficher",
                     range(len(self.data)),
-                    key="select_indices"
+                    key="select_indices",
                 )
                 if indices:
                     selected_lines = self.get_lines(sorted(indices))
-                    st.dataframe(selected_lines, width='stretch')
-            
+                    st.dataframe(selected_lines, width="stretch")
+
             elif action == "Modifier un élément":
                 col1, col2 = st.columns(2)
-                
+
                 with col1:
                     row_index = st.number_input(
                         "Numéro de la ligne",
                         min_value=0,
                         max_value=len(self.data) - 1,
                         value=0,
-                        key=f"edit_row_index_{st.session_state.edit_row_counter}"
+                        key=f"edit_row_index_{st.session_state.edit_row_counter}",
                     )
-                
+
                 with col2:
                     column_name = st.selectbox(
                         "Colonne à modifier",
                         self.data.columns.to_list(),
-                        key=f"edit_column_{st.session_state.edit_row_counter}"
+                        key=f"edit_column_{st.session_state.edit_row_counter}",
                     )
-                
+
                 # Afficher la ligne actuelle
                 st.write("**Ligne actuelle:**")
-                st.dataframe(self.data.iloc[row_index:row_index+1], width='stretch')
-                
+                st.dataframe(self.data.iloc[row_index : row_index + 1], width="stretch")
+
                 # Afficher la valeur actuelle
                 current_value = self.data.at[row_index, column_name]
                 st.info(f"Valeur actuelle de **{column_name}**: `{current_value}`")
-                
+
                 # Permettre de modifier juste cet élément
                 new_value = st.text_input(
                     f"Nouvelle valeur pour {column_name}",
                     value=str(current_value),
-                    key=f"edit_value_{st.session_state.edit_row_counter}"
+                    key=f"edit_value_{st.session_state.edit_row_counter}",
                 )
-                
+
                 if st.button("✏️ Modifier cet élément"):
                     try:
                         # Essayer de convertir en nombre si possible
@@ -588,26 +619,27 @@ class Page_donnees_v3:
                             converted_value = float(new_value)
                         except ValueError:
                             converted_value = new_value
-                        
+
                         self.edit_row(row_index, {column_name: converted_value})
                         st.session_state.edit_row_counter += 1
                         st.success(f"✅ {column_name} modifié avec succès!")
                     except Exception as e:
                         st.error(f"❌ Erreur lors de la modification: {str(e)}")
                         import traceback
+
                         st.error(traceback.format_exc())
-            
+
             elif action == "Supprimer une ligne":
                 row_index = st.number_input(
                     "Numéro de la ligne à supprimer",
                     min_value=0,
                     max_value=len(self.data) - 1,
                     value=0,
-                    key=f"delete_row_index_{st.session_state.delete_row_counter}"
+                    key=f"delete_row_index_{st.session_state.delete_row_counter}",
                 )
                 st.warning("Ligne à supprimer:")
-                st.dataframe(self.data.iloc[row_index:row_index+1], width='stretch')
-                
+                st.dataframe(self.data.iloc[row_index : row_index + 1], width="stretch")
+
                 if st.button("🗑️ Supprimer cette ligne", type="secondary"):
                     try:
                         self.delete_row(row_index)
@@ -616,6 +648,7 @@ class Page_donnees_v3:
                     except Exception as e:
                         st.error(f"❌ Erreur lors de la suppression: {str(e)}")
                         import traceback
+
                         st.error(traceback.format_exc())
         else:
             st.info("Aucune donnée n'a été chargée. Veuillez importer un fichier CSV.")

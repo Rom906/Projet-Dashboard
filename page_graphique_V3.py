@@ -191,8 +191,19 @@ class Area:
     def render_barchart(self):
         fig, ax = plt.subplots()
         data_frame = self.data.melt(var_name="nom_colonne", value_name="values")  # type: ignore
-        data_frame_avec_comptage = data_frame.groupby(["values", "nom_colonne"]).size().reset_index(name="count")
-        sns.barplot(data_frame_avec_comptage, x="values", y="count", hue="nom_colonne", ax=ax, dodge=True)
+        data_frame_avec_comptage = (
+            data_frame.groupby(["values", "nom_colonne"])
+            .size()
+            .reset_index(name="count")
+        )
+        sns.barplot(
+            data_frame_avec_comptage,
+            x="values",
+            y="count",
+            hue="nom_colonne",
+            ax=ax,
+            dodge=True,
+        )
         st.pyplot(fig)
 
     def set_data(self, data: pd.DataFrame) -> None:

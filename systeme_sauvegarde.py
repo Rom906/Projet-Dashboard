@@ -1,4 +1,4 @@
-from page_graphique_V3 import Graphiques
+from page_graphique_v4 import Graphiques
 from page_donnees_V3 import Page_donnees_v3
 import json
 
@@ -16,11 +16,19 @@ def save(page_graphique: Graphiques, page_données: Page_donnees_v3):
         for j in range(len(areas)):
             area_courante = areas[j]
             data = area_courante.data
-            sauvegarde[ligne_courante.title][area_courante.area_name] = {
-                "index": j,
-                "show_name": area_courante.show_name,
-                "content_type": area_courante.content_type,
-            }
+            if area_courante.content_type == area_courante.MARKDOWN:
+                sauvegarde[ligne_courante.title][area_courante.area_name] = {
+                    "index": j,
+                    "show_name": area_courante.show_name,
+                    "content_type": area_courante.content_type,
+                    "text": area_courante.text
+                }
+            else:
+                sauvegarde[ligne_courante.title][area_courante.area_name] = {
+                    "index": j,
+                    "show_name": area_courante.show_name,
+                    "content_type": area_courante.content_type,
+                }
             if data is not None:
                 sauvegarde[ligne_courante.title][area_courante.area_name][
                     "columns_name"
@@ -36,7 +44,10 @@ def save(page_graphique: Graphiques, page_données: Page_donnees_v3):
             sauvegarde["data"][name] = data[name].to_list()
     return json.dumps(sauvegarde, indent=4, ensure_ascii=False)
 
-def load(sauvegarde_str: str, page_graphique: Graphiques, page_données: Page_donnees_v3):
+
+def load(
+    sauvegarde_str: str, page_graphique: Graphiques, page_données: Page_donnees_v3
+):
     sauvegarde = json.loads(sauvegarde_str)
     # Restaurer d'abord les données brutes si présentes afin de pouvoir reconstruire
     # les DataFrame des areas ensuite.
@@ -79,16 +90,26 @@ def load(sauvegarde_str: str, page_graphique: Graphiques, page_données: Page_do
                 continue
             while area_index >= len(ligne_courante.areas):
                 # créer une area vide avec un nom générique
-                ligne_courante.add_area(f"Area_{len(ligne_courante.areas)}", area_data.get("content_type", 4), None)
+                ligne_courante.add_area(
+                    f"Area_{len(ligne_courante.areas)}",
+                    area_data.get("content_type", 4),
+                    None,
+                )
 
             area_courante = ligne_courante.areas[area_index]
             area_courante.area_name = area_name
             area_courante.show_name = area_data.get("show_name", True)
-            area_courante.content_type = area_data.get("content_type", area_courante.content_type)
+            area_courante.content_type = area_data.get(
+                "content_type", area_courante.content_type
+            )
             # Restaurer les données de la zone si elles sont présentes dans la sauvegarde
             columns_name = area_data.get("columns_name")
             abscisse_column_name = area_data.get("abscisse_column_name")
-            if columns_name and page_données is not None and page_données.data is not None:
+            if (
+                columns_name
+                and page_données is not None
+                and page_données.data is not None
+            ):
                 try:
                     # Utiliser la méthode de Page_donnees_v3 pour construire le DataFrame des colonnes
                     if hasattr(page_données, "get_columns"):
@@ -104,7 +125,9 @@ def load(sauvegarde_str: str, page_graphique: Graphiques, page_données: Page_do
                         and abscisse_column_name not in df_cols.columns
                         and abscisse_column_name in page_données.data.columns
                     ):
-                        df_cols[abscisse_column_name] = page_données.data[abscisse_column_name]
+                        df_cols[abscisse_column_name] = page_données.data[
+                            abscisse_column_name
+                        ]
 
                     # si abscisse définie, la mettre en index
                     if abscisse_column_name and abscisse_column_name in df_cols.columns:
