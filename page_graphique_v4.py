@@ -203,6 +203,13 @@ class Area:
         self.show_name = show_name
         self.area_name = area_name
         self.abscisse_column_name = None
+        if data is not None and not data.empty:
+            min_value = 0
+            max_value = data.shape[0] - 1
+            self.range = (min_value, max_value)
+        else:
+            self.range = (None, None)
+
         if type(graphic_type) is str:
             self.content_type = self.convert_type(graphic_type)
         elif type(graphic_type) is int:
@@ -243,8 +250,12 @@ class Area:
             .size()
             .reset_index(name="count")
         )
+        data_frame_avec_comptage = data_frame_avec_comptage[
+            (data_frame_avec_comptage["values"] >= self.range[0])
+            & (data_frame_avec_comptage["values"] <= self.range[1])
+        ]
         sns.barplot(
-            data_frame_avec_comptage,
+            data=data_frame_avec_comptage,
             x="values",
             y="count",
             hue="nom_colonne",
@@ -260,7 +271,11 @@ class Area:
         if self.abscisse_column_name is not None:
             plotted_columns.remove(self.abscisse_column_name)
             data_frame = self.data.melt(id_vars=self.abscisse_column_name, value_vars=plotted_columns, var_name="nom_colonne", value_name="values")  # type: ignore
-            sns.lineplot(data_frame, x=self.abscisse_column_name, y="values", hue="nom_colonne", ax=ax)  # type: ignore
+            data_frame = data_frame[
+                (data_frame[self.abscisse_column_name] >= self.range[0])
+                & (data_frame[self.abscisse_column_name] <= self.range[1])
+            ]
+            sns.lineplot(data=data_frame, x=self.abscisse_column_name, y="values", hue="nom_colonne", ax=ax)  # type: ignore
         else:
             for column in self.data.columns:  # type: ignore
                 sns.lineplot(x=self.data.index, y=self.data[column], ax=ax)  # type: ignore
@@ -269,15 +284,19 @@ class Area:
     def render_scatter(self):
         sns.set_theme(style="darkgrid")
         fig, ax = plt.subplots()
+        if self.abscisse_column_name is not None:
+            data_filtered = self.data[(self.data[self.abscisse_column_name] > self.range[0]) & (self.data[self.abscisse_column_name] < self.range[1])]  # type: ignore
+        else:
+            data_filtered = self.data.loc[self.range[0]: self.range[1]]  # type: ignore
         plotted_columns = self.data.columns.to_list()  # type: ignore
         if self.abscisse_column_name:
             plotted_columns.remove(self.abscisse_column_name)
-            abscisse = self.data[self.abscisse_column_name]  # type: ignore
+            abscisse = data_filtered[self.abscisse_column_name]  # type: ignore
         else:
             abscisse = self.data.index  # type: ignore
 
         for column in plotted_columns:
-            sns.scatterplot(x=abscisse, y=self.data[column])  # type: ignore
+            sns.scatterplot(x=abscisse, y=data_filtered[column])  # type: ignore
         st.pyplot(fig)
 
     def render_markdown(self):
@@ -290,6 +309,14 @@ class Area:
 
     def set_data(self, data: pd.DataFrame) -> None:
         if data is not None and not data.empty:
+            if self.data is None or self.data.empty:
+                if self.content_type == self.BARCHART:
+                    data_frame = data.melt(var_name="nom_colonne", value_name="values")
+                    min_value = data_frame["values"].min()
+                    max_value = data_frame["values"].max()
+                    self.range = (min_value, max_value)
+                else:
+                    self.range = (0, data.shape[0] - 1)
             self.data = data
             if self.abscisse_column_name is None:
                 return
@@ -302,13 +329,20 @@ class Area:
                     self.abscisse_column_name = None
 
     def set_abscisse_column(self, abscisse_column_name: str | None):
-        if abscisse_column_name is None:
-            self.abscisse_column_name = None
-            self.data.reset_index(drop=True, inplace=True)  # type: ignore
-            self.data.index.name = "Index par défaut"  # type: ignore
-        if abscisse_column_name in self.data.columns.to_list():  # type: ignore
-            self.abscisse_column_name = abscisse_column_name  # type: ignore
-            self.data.set_index(abscisse_column_name, drop=False, inplace=True)  # type: ignore
+        if self.data is not None and not self.data.empty:
+            if abscisse_column_name is None:
+                self.abscisse_column_name = None
+                self.data.reset_index(drop=True, inplace=True)  # type: ignore
+                self.data.index.name = "Index par défaut"  # type: ignore
+                min_value = 0
+                max_value = self.data.shape[0] - 1
+                self.range = (min_value, max_value)
+            elif abscisse_column_name in self.data.columns.to_list():  # type: ignore
+                self.abscisse_column_name = abscisse_column_name  # type: ignore
+                self.data.set_index(abscisse_column_name, drop=False, inplace=True)  # type: ignore
+                min_value = self.data[abscisse_column_name].min()
+                max_value = self.data[abscisse_column_name].max()
+                self.range = (min_value, max_value)
 
     # à mettre à jour à chaque ajout
     @staticmethod
@@ -356,6 +390,7 @@ class Area:
                     colonnes_affichées
                 )
                 self.set_data(données_affichées)  # type: ignore
+                self.render_sidebar_abscisse_interval_choose()
         else:
             st.warning(
                 "Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'."
@@ -402,6 +437,7 @@ class Area:
                         self.set_abscisse_column(None)
                         st.session_state.colonne_abscisse = "Index par défaut"
                     safe_rerun()
+                self.render_sidebar_abscisse_interval_choose()
         else:
             st.warning(
                 "Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'."
@@ -448,6 +484,7 @@ class Area:
                         self.set_abscisse_column(None)
                         st.session_state.colonne_abscisse = "Index par défaut"
                     safe_rerun()
+                self.render_sidebar_abscisse_interval_choose()
         else:
             st.warning(
                 "Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'."
@@ -460,3 +497,22 @@ class Area:
             label = "Modifier le texte"
         if st.button(label):
             self.input_mode = not self.input_mode
+
+    def render_sidebar_abscisse_interval_choose(self):
+        if self.data is not None and not self.data.empty:
+            if self.content_type == self.BARCHART:
+                data_frame = self.data.melt(var_name="nom_colonne", value_name="values")
+                min_value = data_frame["values"].min()
+                max_value = data_frame["values"].max()
+            elif self.abscisse_column_name is None:
+                min_value = 0
+                max_value = self.data.shape[0] - 1
+            else:
+                min_value = self.data[self.abscisse_column_name].min()
+                max_value = self.data[self.abscisse_column_name].max()
+            self.range = st.slider(
+                "Choisissez l'intervalle des données",
+                min_value,
+                max_value,
+                (min_value, max_value),
+            )

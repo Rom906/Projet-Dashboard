@@ -21,7 +21,7 @@ def save(page_graphique: Graphiques, page_données: Page_donnees_v3):
                     "index": j,
                     "show_name": area_courante.show_name,
                     "content_type": area_courante.content_type,
-                    "text": area_courante.text
+                    "text": area_courante.text,
                 }
             else:
                 sauvegarde[ligne_courante.title][area_courante.area_name] = {
