@@ -623,6 +623,7 @@ class Page_donnees_v3:
                         self.edit_row(row_index, {column_name: converted_value})
                         st.session_state.edit_row_counter += 1
                         st.success(f"✅ {column_name} modifié avec succès!")
+                        st.rerun()
                     except Exception as e:
                         st.error(f"❌ Erreur lors de la modification: {str(e)}")
                         import traceback
@@ -645,6 +646,7 @@ class Page_donnees_v3:
                         self.delete_row(row_index)
                         st.session_state.delete_row_counter += 1
                         st.success("✅ Ligne supprimée!")
+                        st.rerun()
                     except Exception as e:
                         st.error(f"❌ Erreur lors de la suppression: {str(e)}")
                         import traceback
