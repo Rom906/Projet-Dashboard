@@ -2,7 +2,6 @@ import streamlit as st
 from typing import List
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 
 class Graphiques:
