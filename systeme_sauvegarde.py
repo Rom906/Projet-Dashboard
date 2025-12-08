@@ -28,6 +28,7 @@ def save(page_graphique: Graphiques, page_données: Page_donnees_v3):
                     "index": j,
                     "show_name": area_courante.show_name,
                     "content_type": area_courante.content_type,
+                    "range": area_courante.range,
                 }
             if data is not None:
                 sauvegarde[ligne_courante.title][area_courante.area_name][
@@ -98,6 +99,8 @@ def load(
                 if area_data["content_type"] == Area.MARKDOWN:
                     ligne_courante.areas[area_index].text = area_data["text"]
                     ligne_courante.areas[area_index].input_mode = False
+                else:
+                    ligne_courante.areas[area_index].range = area_data["range"]
 
             area_courante = ligne_courante.areas[area_index]
             area_courante.area_name = area_name
@@ -125,16 +128,16 @@ def load(
                     # la réinsérer temporairement afin de pouvoir la mettre en index.
                     if (
                         abscisse_column_name
-                        and abscisse_column_name not in df_cols.columns
+                        and abscisse_column_name not in df_cols.columns  # type: ignore
                         and abscisse_column_name in page_données.data.columns
                     ):
-                        df_cols[abscisse_column_name] = page_données.data[
+                        df_cols[abscisse_column_name] = page_données.data[  # type: ignore
                             abscisse_column_name
                         ]
 
                     # si abscisse définie, la mettre en index
-                    if abscisse_column_name and abscisse_column_name in df_cols.columns:
-                        df_cols = df_cols.set_index(abscisse_column_name)
+                    if abscisse_column_name and abscisse_column_name in df_cols.columns:  # type: ignore
+                        df_cols = df_cols.set_index(abscisse_column_name)  # type: ignore
 
                     area_courante.data = df_cols
                 except Exception:
