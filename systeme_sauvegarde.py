@@ -1,6 +1,7 @@
-from page_graphique_v4 import Graphiques, Area
+from page_graphique_V3 import Graphiques, Area
 from page_donnees_V3 import Page_donnees_v3
 import json
+import pandas as pd
 
 
 def save(page_graphique: Graphiques, page_données: Page_donnees_v3):
