@@ -3,6 +3,7 @@ Point d'entrée principal du Dashboard
 Utilise V3 de tous les modules
 Commande: streamlit run main.py
 """
+
 import streamlit as st
 from page_donnees_V3 import Page_donnees_v3
 from page_graphique_V3 import Graphiques, Area
@@ -58,7 +59,9 @@ with st.sidebar.expander("Ajouter des zones"):
         elif titre_nouvelle_ligne in st.session_state.graphiques.get_lines_titles():
             st.text("Il y a déjà une ligne ayant ce nom")
         else:
-            st.session_state.graphiques.add_line(titre_nouvelle_ligne, afficher_titre_ligne)
+            st.session_state.graphiques.add_line(
+                titre_nouvelle_ligne, afficher_titre_ligne
+            )
             safe_rerun()
 
     st.subheader("Ajouter une zone graphique")
@@ -83,7 +86,9 @@ with st.sidebar.expander("Ajouter des zones"):
             if not type_graphique:
                 st.error("Aucun type de graphique sélectionné")
             else:
-                line_index = st.session_state.graphiques.get_line_index(titre_ligne_modifiée)
+                line_index = st.session_state.graphiques.get_line_index(
+                    titre_ligne_modifiée
+                )
                 if line_index is None:
                     st.error("Erreur interne, voir développeurs")
                 st.session_state.graphiques.add_area(line_index, titre_nouvelle_zone, type_graphique, show_name=afficher_titre_zone)  # type: ignore
@@ -106,7 +111,9 @@ with st.sidebar.expander("Retirer des zones"):
         "Sélectionnez la ligne contenant la zone à supprimer", lines_names
     )
     if ligne_selectionnée:
-        areas_name = st.session_state.graphiques.get_line_areas_names(ligne_selectionnée)
+        areas_name = st.session_state.graphiques.get_line_areas_names(
+            ligne_selectionnée
+        )
         area_supprimée = st.selectbox("Choisissez la zone à supprimer", areas_name)
         if st.button("Supprimer la zone"):
             st.session_state.graphiques.delete_area(ligne_selectionnée, area_supprimée)
@@ -118,24 +125,32 @@ with st.sidebar.expander("Retirer des zones"):
 with st.sidebar.expander("Gestion des données graphiques"):
     st.subheader("Choix de la ligne à modifier")
     nom_ligne_modifiée = st.selectbox(
-        "Selectionnez la ligne à modifier", options=st.session_state.graphiques.get_lines_titles()
+        "Selectionnez la ligne à modifier",
+        options=st.session_state.graphiques.get_lines_titles(),
     )
 
     if nom_ligne_modifiée:
         st.subheader("Choix de la zone graphique à modifier")
-        graphics_names = st.session_state.graphiques.get_line_areas_names(nom_ligne_modifiée)
+        graphics_names = st.session_state.graphiques.get_line_areas_names(
+            nom_ligne_modifiée
+        )
         nom_area_modifié = st.selectbox(
             "Sélectionnez la zone à modifier", options=graphics_names
         )
 
         if nom_area_modifié and nom_ligne_modifiée:
             # Vérifier que les données sont disponibles
-            if st.session_state.données.data is not None and len(st.session_state.données.data.columns) > 0:
+            if (
+                st.session_state.données.data is not None
+                and len(st.session_state.données.data.columns) > 0
+            ):
                 st.subheader("Paramètres du graphique")
                 st.subheader("Choix des données")
                 colonnes_données = st.session_state.données.data.columns.to_list()  # type: ignore
-                colonnes_deja_séléctionnées = st.session_state.graphiques.get_area_ploted_columns(
-                    nom_ligne_modifiée, nom_area_modifié
+                colonnes_deja_séléctionnées = (
+                    st.session_state.graphiques.get_area_ploted_columns(
+                        nom_ligne_modifiée, nom_area_modifié
+                    )
                 )
                 colonnes_affichées = st.multiselect(
                     "Choisissez les colonnes utilisées dans le graphique",
@@ -143,7 +158,9 @@ with st.sidebar.expander("Gestion des données graphiques"):
                     default=colonnes_deja_séléctionnées,
                 )
                 if colonnes_affichées:
-                    données_affichées = st.session_state.données.get_columns(colonnes_affichées)
+                    données_affichées = st.session_state.données.get_columns(
+                        colonnes_affichées
+                    )
                     st.session_state.graphiques.set_datas(nom_ligne_modifiée, nom_area_modifié, données_affichées)  # type: ignore
 
                     st.subheader("Choix de l'axe d'abscisse")
@@ -156,7 +173,9 @@ with st.sidebar.expander("Gestion des données graphiques"):
                             nom_ligne_modifiée, nom_area_modifié, colonne_abscisse
                         )
             else:
-                st.warning("Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'.")
+                st.warning(
+                    "Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'."
+                )
 
 # Sauvegarde
 st.sidebar.download_button(
