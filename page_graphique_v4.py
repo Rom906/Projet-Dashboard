@@ -319,29 +319,28 @@ class Area:
 
     def render_khi2(self):
 
-        if st.button("Lancer le test du Khi²"):
 
-            st.write("Effectifs observés")
-            st.dataframe(self.data)
-            st.write("Effectifs théoriques")
-            st.dataframe(self.theo)
+        st.write("Effectifs observés")
+        st.dataframe(self.data)
+        st.write("Effectifs théoriques")
+        st.dataframe(self.theo)
 
-            accepte = True
-            ddl = len(self.data.columns.to_list()) - 3
-            for colonne in self.data.columns:
-                x2calc = 0
-                for i in range(len(self.data[colonne])):
-                    x2calc += (self.data[colonne].iloc[i] - self.theo[colonne].iloc[i]) ** 2 / (
-                        self.theo[colonne].iloc[i]
-                    )
-                x2crit = chi2.ppf(0.95, ddl)
-                if x2calc > x2crit:
-                    accepte = False
+        accepte = True
+        ddl = len(self.data.columns.to_list()) - 1
+        for colonne in self.data.columns:
+            x2calc = 0
+            for i in range(len(self.data[colonne])):
+                x2calc += (self.data[colonne].iloc[i] - self.theo[colonne].iloc[i]) ** 2 / (
+                    self.theo[colonne].iloc[i]
+                )
+            x2crit = chi2.ppf(0.95, ddl)
+            if x2calc > x2crit:
+                accepte = False
 
-            if accepte:
-                st.markdown("# On ne peut pas réfuter la loi avec le test du khi2")
-            else:
-                st.markdown("# On peut réfuter la loi avec 5% de chance de se tromper")
+        if accepte:
+            st.markdown("# On ne peut pas réfuter la loi avec le test du khi2")
+        else:
+            st.markdown("# On peut réfuter la loi avec 5% de chance de se tromper")
 
     def set_data(self, data: pd.DataFrame) -> None:
         if data is not None and not data.empty:
