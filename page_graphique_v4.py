@@ -1,5 +1,5 @@
 import streamlit as st
-from typing import List
+from typing import List, Tuple
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -208,7 +208,7 @@ class Area:
             max_value = data.shape[0] - 1
             self.range = (min_value, max_value)
         else:
-            self.range = (None, None)
+            self.range: Tuple = (None, None)
 
         if type(graphic_type) is str:
             self.content_type = self.convert_type(graphic_type)
@@ -287,7 +287,7 @@ class Area:
         if self.abscisse_column_name is not None:
             data_filtered = self.data[(self.data[self.abscisse_column_name] > self.range[0]) & (self.data[self.abscisse_column_name] < self.range[1])]  # type: ignore
         else:
-            data_filtered = self.data.loc[self.range[0]: self.range[1]]  # type: ignore
+            data_filtered = self.data.loc[self.range[0] : self.range[1]]  # type: ignore
         plotted_columns = self.data.columns.to_list()  # type: ignore
         if self.abscisse_column_name:
             plotted_columns.remove(self.abscisse_column_name)
@@ -504,6 +504,9 @@ class Area:
                 data_frame = self.data.melt(var_name="nom_colonne", value_name="values")
                 min_value = data_frame["values"].min()
                 max_value = data_frame["values"].max()
+            elif self.range != (None, None):
+                min_value = self.range[0]
+                max_value = self.range[1]
             elif self.abscisse_column_name is None:
                 min_value = 0
                 max_value = self.data.shape[0] - 1
