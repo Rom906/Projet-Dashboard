@@ -109,6 +109,11 @@ class Graphiques:
                 return i
         return None
 
+    def get_area_range(self, line_title: str, area_name: str) -> Tuple[str, str] | None:
+        for line in self.lines:
+            if line.title == line_title:
+                return line.get_area_range(area_name)
+
     def render_area_sidebar_options(self, line_title: str, area_name: str):
         for line in self.lines:
             if line.title == line_title:
@@ -169,6 +174,11 @@ class Ligne:
         for area in self.areas:
             if area.area_name == area_name:
                 return area.abscisse_column_name
+
+    def get_area_range(self, area_name: str) -> Tuple[str, str] | None:
+        for area in self.areas:
+            if area.area_name == area_name:
+                return area.range
 
     def set_data(self, area_name: str, data: pd.DataFrame) -> None:
         for area in self.areas:
@@ -287,8 +297,9 @@ class Area:
             ]
             sns.lineplot(data=data_frame, x=self.abscisse_column_name, y="values", hue="nom_colonne", ax=ax)  # type: ignore
         else:
-            for column in self.data.columns:  # type: ignore
-                sns.lineplot(x=self.data.index, y=self.data[column], ax=ax)  # type: ignore
+            data_filtered = self.data.loc[self.range[0]: self.range[1]]  # type: ignore
+            for column in data_filtered.columns:  # type: ignore
+                sns.lineplot(x=data_filtered.index, y=data_filtered[column], ax=ax, label=column)  # type: ignore
         st.pyplot(fig)
 
     def render_scatter(self):
@@ -297,13 +308,13 @@ class Area:
         if self.abscisse_column_name is not None:
             data_filtered = self.data[(self.data[self.abscisse_column_name] > self.range[0]) & (self.data[self.abscisse_column_name] < self.range[1])]  # type: ignore
         else:
-            data_filtered = self.data.loc[self.range[0] : self.range[1]]  # type: ignore
+            data_filtered = self.data.loc[self.range[0]: self.range[1]]  # type: ignore
         plotted_columns = self.data.columns.to_list()  # type: ignore
         if self.abscisse_column_name:
             plotted_columns.remove(self.abscisse_column_name)
             abscisse = data_filtered[self.abscisse_column_name]  # type: ignore
         else:
-            abscisse = self.data.index  # type: ignore
+            abscisse = data_filtered.index  # type: ignore
 
         for column in plotted_columns:
             sns.scatterplot(x=abscisse, y=data_filtered[column])  # type: ignore
@@ -318,20 +329,18 @@ class Area:
             st.markdown(self.text)
 
     def render_khi2(self):
-
-
         st.write("Effectifs observés")
         st.dataframe(self.data)
         st.write("Effectifs théoriques")
         st.dataframe(self.theo)
 
         accepte = True
-        ddl = len(self.data.columns.to_list()) - 1
-        for colonne in self.data.columns:
+        ddl = len(self.data.columns.to_list()) - 1  # type: ignore
+        for colonne in self.data.columns:  # type: ignore
             x2calc = 0
-            for i in range(len(self.data[colonne])):
-                x2calc += (self.data[colonne].iloc[i] - self.theo[colonne].iloc[i]) ** 2 / (
-                    self.theo[colonne].iloc[i]
+            for i in range(len(self.data[colonne])):  # type: ignore
+                x2calc += (self.data[colonne].iloc[i] - self.theo[colonne].iloc[i]) ** 2 / (  # type: ignore
+                    self.theo[colonne].iloc[i]  # type: ignore
                 )
             x2crit = chi2.ppf(0.95, ddl)
             if x2calc > x2crit:
@@ -543,21 +552,27 @@ class Area:
                 data_frame = self.data.melt(var_name="nom_colonne", value_name="values")
                 min_value = data_frame["values"].min()
                 max_value = data_frame["values"].max()
-            elif self.range != (None, None):
-                min_value = self.range[0]
-                max_value = self.range[1]
             elif self.abscisse_column_name is None:
                 min_value = 0
                 max_value = self.data.shape[0] - 1
             else:
                 min_value = self.data[self.abscisse_column_name].min()
                 max_value = self.data[self.abscisse_column_name].max()
-            self.range = st.slider(
-                "Choisissez l'intervalle des données",
-                min_value,
-                max_value,
-                (min_value, max_value),
-            )
+            if self.range != (None, None):
+                self.range = st.slider(  # type: ignore
+                    "Choisissez l'intervalle des données",
+                    min_value,
+                    max_value,
+                    key="range"
+                )
+            else:
+                self.range = st.slider(
+                    "Choisissez l'intervalle des données",
+                    min_value,
+                    max_value,
+                    (min_value, max_value),
+                )
+                st.session_state.range = self.range
 
     def render_sidebar_options_khi2(self):
         if (
@@ -578,7 +593,7 @@ class Area:
                 self.set_data(données_affichées)
 
                 # total par colonne (somme des effectifs observés)
-                col_totals = self.data.sum(axis=0)
+                col_totals = self.data.sum(axis=0)  # type: ignore
 
                 st.subheader("Choix de la loi à tester : ")
                 type_loi = st.selectbox(
@@ -587,22 +602,22 @@ class Area:
                 )
 
                 # index = modalités / classes (par exemple 0,1,2,... ou centres de classes)
-                x = self.data.index.to_numpy()
+                x = self.data.index.to_numpy()  # type: ignore
                 n_modalites = len(x)
 
                 self.theo = pd.DataFrame(
-                    index=self.data.index, columns=self.data.columns, dtype=float
+                    index=self.data.index, columns=self.data.columns, dtype=float  # type: ignore
                 )
 
                 if type_loi == "Équirépartition":
                     # même probabilité pour chaque modalité
                     # donc effectif théorique = total_colonne / n_modalites
-                    for col in self.data.columns:
+                    for col in self.data.columns:  # type: ignore
                         self.theo[col] = col_totals[col] / n_modalites
 
                 elif type_loi == "Loi normale":
-                # concaténer toutes les valeurs pour estimer mu et sigma (ou les demander)
-                    toutes_valeurs = pd.concat([self.data[c] for c in self.data.columns])
+                    # concaténer toutes les valeurs pour estimer mu et sigma (ou les demander)
+                    toutes_valeurs = pd.concat([self.data[c] for c in self.data.columns])  # type: ignore
                     x_all = toutes_valeurs.to_numpy(dtype=float)
 
                     mu = st.number_input(
@@ -619,9 +634,9 @@ class Area:
                     obs_dict = {}
                     theo_dict = {}
 
-                    for col in self.data.columns:
+                    for col in self.data.columns:  # type: ignore
                         # effectifs observés = nombre de lignes qui ont la même valeur
-                        obs_counts = self.data[col].value_counts().sort_index()
+                        obs_counts = self.data[col].value_counts().sort_index()  # type: ignore
                         x = obs_counts.index.to_numpy(dtype=float)
                         total = obs_counts.sum()
 
@@ -637,7 +652,7 @@ class Area:
                     obs_df = pd.DataFrame(index=index_union)
                     theo_df = pd.DataFrame(index=index_union)
 
-                    for col in self.data.columns:
+                    for col in self.data.columns:  # type: ignore
                         obs_df[col] = obs_dict[col].reindex(index_union, fill_value=0.0)
                         theo_df[col] = theo_dict[col].reindex(index_union, fill_value=0.0)
 

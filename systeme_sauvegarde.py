@@ -4,6 +4,15 @@ import json
 import pandas as pd
 
 
+def convert_type(obj):
+    import numpy as np
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, np.floating):
+        return float(obj)
+    return str(obj)
+
+
 def save(page_graphique: Graphiques, page_données: Page_donnees_v3):
     sauvegarde = {}
     lignes = page_graphique.lines
@@ -22,14 +31,14 @@ def save(page_graphique: Graphiques, page_données: Page_donnees_v3):
                     "index": j,
                     "show_name": area_courante.show_name,
                     "content_type": area_courante.content_type,
-                    "text": area_courante.text,
+                    "text": area_courante.text,  # type: ignore
                 }
             else:
                 sauvegarde[ligne_courante.title][area_courante.area_name] = {
                     "index": j,
                     "show_name": area_courante.show_name,
                     "content_type": area_courante.content_type,
-                    "range": area_courante.range,
+                    "range": area_courante.range,  # type: ignore
                 }
             if data is not None:
                 sauvegarde[ligne_courante.title][area_courante.area_name][
@@ -44,7 +53,7 @@ def save(page_graphique: Graphiques, page_données: Page_donnees_v3):
     if data is not None:
         for name in data.columns.to_list():
             sauvegarde["data"][name] = data[name].to_list()
-    return json.dumps(sauvegarde, indent=4, ensure_ascii=False)
+    return json.dumps(sauvegarde, indent=4, ensure_ascii=False, default=convert_type)
 
 
 def load(
@@ -55,8 +64,6 @@ def load(
     # les DataFrame des areas ensuite.
     data_dict = sauvegarde.get("data", {})
     if data_dict:
-        import pandas as pd
-
         data_frame = pd.DataFrame(data_dict)
         page_données.data = data_frame
         if data_frame.index.name:
@@ -118,7 +125,7 @@ def load(
                 and page_données.data is not None
             ):
                 try:
-                    # Utiliser la méthode de Page_donnees_v3 pour construire le DataFrame des colonnes
+                    # Utiliser la méthode de Page_donnees_v4 pour construire le DataFrame des colonnes
                     if hasattr(page_données, "get_columns"):
                         df_cols = page_données.get_columns(columns_name)
                     else:
@@ -135,12 +142,8 @@ def load(
                         df_cols[abscisse_column_name] = page_données.data[  # type: ignore
                             abscisse_column_name
                         ]
-
-                    # si abscisse définie, la mettre en index
-                    if abscisse_column_name and abscisse_column_name in df_cols.columns:  # type: ignore
-                        df_cols = df_cols.set_index(abscisse_column_name)  # type: ignore
-
-                    area_courante.data = df_cols
+                    area_courante.set_data(df_cols)
+                    area_courante.set_abscisse_column(abscisse_column_name)
                 except Exception:
                     # ne pas planter le chargement si reconstruction des données échoue
                     area_courante.data = None
