@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit as st
 from page_donnees_V3 import Page_donnees_v3
 from page_graphique_v4 import Graphiques, Area
 from typing import Dict
@@ -161,6 +160,7 @@ with st.sidebar.expander("Gestion des données graphiqes"):
                         nom_ligne_modifiée, nom_area_modifiée
                     )
                 )
+                st.session_state.range = st.session_state.graphiques.get_area_range(nom_ligne_modifiée, nom_area_modifiée)
             # Vérifier que les données sont disponibles
             st.session_state.graphiques.render_area_sidebar_options(
                 nom_ligne_modifiée, nom_area_modifiée

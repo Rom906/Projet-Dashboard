@@ -3,6 +3,8 @@ from typing import List, Tuple
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
+from scipy.stats import norm, chi2
 
 
 def safe_rerun() -> None:
@@ -107,6 +109,11 @@ class Graphiques:
                 return i
         return None
 
+    def get_area_range(self, line_title: str, area_name: str) -> Tuple[str, str] | None:
+        for line in self.lines:
+            if line.title == line_title:
+                return line.get_area_range(area_name)
+
     def render_area_sidebar_options(self, line_title: str, area_name: str):
         for line in self.lines:
             if line.title == line_title:
@@ -168,6 +175,11 @@ class Ligne:
             if area.area_name == area_name:
                 return area.abscisse_column_name
 
+    def get_area_range(self, area_name: str) -> Tuple[str, str] | None:
+        for area in self.areas:
+            if area.area_name == area_name:
+                return area.range
+
     def set_data(self, area_name: str, data: pd.DataFrame) -> None:
         for area in self.areas:
             if area.area_name == area_name:
@@ -191,6 +203,7 @@ class Area:
     LINECHART = 2
     SCATTER = 3
     MARKDOWN = 4
+    KHI2 = 5
 
     def __init__(
         self,
@@ -220,6 +233,9 @@ class Area:
         if self.content_type == self.MARKDOWN:
             self.input_mode = True
             self.text = None
+
+        if self.content_type == self.KHI2:
+            self.theo = []
         return
 
     def render(self) -> None:
@@ -240,6 +256,10 @@ class Area:
                 if self.show_name:
                     st.subheader(self.area_name)
                 self.render_scatter()
+            elif self.content_type == self.KHI2:
+                if self.show_name:
+                    st.subheader(self.area_name)
+                self.render_khi2()
 
     def render_barchart(self):
         sns.set_theme(style="darkgrid")
@@ -277,8 +297,9 @@ class Area:
             ]
             sns.lineplot(data=data_frame, x=self.abscisse_column_name, y="values", hue="nom_colonne", ax=ax)  # type: ignore
         else:
-            for column in self.data.columns:  # type: ignore
-                sns.lineplot(x=self.data.index, y=self.data[column], ax=ax)  # type: ignore
+            data_filtered = self.data.loc[self.range[0]: self.range[1]]  # type: ignore
+            for column in data_filtered.columns:  # type: ignore
+                sns.lineplot(x=data_filtered.index, y=data_filtered[column], ax=ax, label=column)  # type: ignore
         st.pyplot(fig)
 
     def render_scatter(self):
@@ -287,13 +308,13 @@ class Area:
         if self.abscisse_column_name is not None:
             data_filtered = self.data[(self.data[self.abscisse_column_name] > self.range[0]) & (self.data[self.abscisse_column_name] < self.range[1])]  # type: ignore
         else:
-            data_filtered = self.data.loc[self.range[0] : self.range[1]]  # type: ignore
+            data_filtered = self.data.loc[self.range[0]: self.range[1]]  # type: ignore
         plotted_columns = self.data.columns.to_list()  # type: ignore
         if self.abscisse_column_name:
             plotted_columns.remove(self.abscisse_column_name)
             abscisse = data_filtered[self.abscisse_column_name]  # type: ignore
         else:
-            abscisse = self.data.index  # type: ignore
+            abscisse = data_filtered.index  # type: ignore
 
         for column in plotted_columns:
             sns.scatterplot(x=abscisse, y=data_filtered[column])  # type: ignore
@@ -306,6 +327,29 @@ class Area:
             )
         else:
             st.markdown(self.text)
+
+    def render_khi2(self):
+        st.write("Effectifs observés")
+        st.dataframe(self.data)
+        st.write("Effectifs théoriques")
+        st.dataframe(self.theo)
+
+        accepte = True
+        ddl = len(self.data.columns.to_list()) - 1  # type: ignore
+        for colonne in self.data.columns:  # type: ignore
+            x2calc = 0
+            for i in range(len(self.data[colonne])):  # type: ignore
+                x2calc += (self.data[colonne].iloc[i] - self.theo[colonne].iloc[i]) ** 2 / (  # type: ignore
+                    self.theo[colonne].iloc[i]  # type: ignore
+                )
+            x2crit = chi2.ppf(0.95, ddl)
+            if x2calc > x2crit:
+                accepte = False
+
+        if accepte:
+            st.markdown("# On ne peut pas réfuter la loi avec le test du khi2")
+        else:
+            st.markdown("# On peut réfuter la loi avec 5% de chance de se tromper")
 
     def set_data(self, data: pd.DataFrame) -> None:
         if data is not None and not data.empty:
@@ -355,12 +399,14 @@ class Area:
             return Area.SCATTER
         elif type == "Markdown":
             return Area.MARKDOWN
+        elif type == "Khi2":
+            return Area.KHI2
         else:
             raise KeyError("wrong type for graphic")
 
     @staticmethod
     def get_types() -> List[str]:
-        return ["Histogramme", "Courbe", "Nuage de points", "Markdown"]
+        return ["Histogramme", "Courbe", "Nuage de points", "Markdown", "Khi2"]
 
     def render_sidebar_options(self):
         if self.content_type == Area.BARCHART:
@@ -371,6 +417,8 @@ class Area:
             self.render_sidebar_options_scatter()
         elif self.content_type == Area.MARKDOWN:
             self.render_sidebar_options_markdown()
+        elif self.content_type == Area.KHI2:
+            self.render_sidebar_options_khi2()
 
     def render_sidebar_options_barchart(self):
         if (
@@ -504,18 +552,120 @@ class Area:
                 data_frame = self.data.melt(var_name="nom_colonne", value_name="values")
                 min_value = data_frame["values"].min()
                 max_value = data_frame["values"].max()
-            elif self.range != (None, None):
-                min_value = self.range[0]
-                max_value = self.range[1]
             elif self.abscisse_column_name is None:
                 min_value = 0
                 max_value = self.data.shape[0] - 1
             else:
                 min_value = self.data[self.abscisse_column_name].min()
                 max_value = self.data[self.abscisse_column_name].max()
-            self.range = st.slider(
-                "Choisissez l'intervalle des données",
-                min_value,
-                max_value,
-                (min_value, max_value),
+            if self.range != (None, None):
+                self.range = st.slider(  # type: ignore
+                    "Choisissez l'intervalle des données",
+                    min_value,
+                    max_value,
+                    key="range"
+                )
+            else:
+                self.range = st.slider(
+                    "Choisissez l'intervalle des données",
+                    min_value,
+                    max_value,
+                    (min_value, max_value),
+                )
+                st.session_state.range = self.range
+
+    def render_sidebar_options_khi2(self):
+        if (
+            st.session_state.données.data is not None
+            and len(st.session_state.données.data.columns) > 0
+        ):
+            st.subheader("Choix des données")
+            colonnes_données = st.session_state.données.data.columns.to_list()
+            colonnes_affichées = st.multiselect(
+                "Choississez les colonnes utilisées dans le test",
+                colonnes_données,
+                key="colonnes_affichées_khi2",
+            )
+            if colonnes_affichées:
+                données_affichées = st.session_state.données.get_columns(
+                    colonnes_affichées
+                )
+                self.set_data(données_affichées)
+
+                # total par colonne (somme des effectifs observés)
+                col_totals = self.data.sum(axis=0)  # type: ignore
+
+                st.subheader("Choix de la loi à tester : ")
+                type_loi = st.selectbox(
+                    "Loi théorique",
+                    ["Équirépartition", "Loi normale"],
+                )
+
+                # index = modalités / classes (par exemple 0,1,2,... ou centres de classes)
+                x = self.data.index.to_numpy()  # type: ignore
+                n_modalites = len(x)
+
+                self.theo = pd.DataFrame(
+                    index=self.data.index, columns=self.data.columns, dtype=float  # type: ignore
+                )
+
+                if type_loi == "Équirépartition":
+                    # même probabilité pour chaque modalité
+                    # donc effectif théorique = total_colonne / n_modalites
+                    for col in self.data.columns:  # type: ignore
+                        self.theo[col] = col_totals[col] / n_modalites
+
+                elif type_loi == "Loi normale":
+                    # concaténer toutes les valeurs pour estimer mu et sigma (ou les demander)
+                    toutes_valeurs = pd.concat([self.data[c] for c in self.data.columns])  # type: ignore
+                    x_all = toutes_valeurs.to_numpy(dtype=float)
+
+                    mu = st.number_input(
+                        "Valeur de l'espérance (μ) : ",
+                        value=float(np.mean(x_all)),
+                        key="mu_khi2",
+                    )
+                    sigma = st.number_input(
+                        "Valeur de l'écart-type (σ) : ",
+                        value=float(np.std(x_all, ddof=1)),
+                        key="sigma_khi2",
+                    )
+
+                    obs_dict = {}
+                    theo_dict = {}
+
+                    for col in self.data.columns:  # type: ignore
+                        # effectifs observés = nombre de lignes qui ont la même valeur
+                        obs_counts = self.data[col].value_counts().sort_index()  # type: ignore
+                        x = obs_counts.index.to_numpy(dtype=float)
+                        total = obs_counts.sum()
+
+                        dens = norm.pdf(x, loc=mu, scale=sigma)
+                        p = dens / dens.sum()
+                        theo_counts = p * total
+
+                        obs_dict[col] = obs_counts
+                        theo_dict[col] = pd.Series(theo_counts, index=obs_counts.index)
+
+                    # union des valeurs possibles pour toutes les colonnes
+                    index_union = sorted(set().union(*[s.index for s in obs_dict.values()]))
+                    obs_df = pd.DataFrame(index=index_union)
+                    theo_df = pd.DataFrame(index=index_union)
+
+                    for col in self.data.columns:  # type: ignore
+                        obs_df[col] = obs_dict[col].reindex(index_union, fill_value=0.0)
+                        theo_df[col] = theo_dict[col].reindex(index_union, fill_value=0.0)
+
+                    # ICI seulement on remplace self.data et self.theo
+                    self.data = obs_df    # effectifs observés par valeur
+                    self.theo = theo_df   # effectifs théoriques par valeur
+
+                st.write("Effectifs observés pour le test :")
+                st.dataframe(self.data)
+                st.write("Effectifs théoriques pour le test :")
+                st.dataframe(self.theo)
+
+        else:
+            st.warning(
+                "Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'."
             )
