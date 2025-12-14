@@ -548,6 +548,7 @@ class Area:
 
     def render_sidebar_abscisse_interval_choose(self):
         if self.data is not None and not self.data.empty:
+            print(self.range, st.session_state.range)
             if self.content_type == self.BARCHART:
                 data_frame = self.data.melt(var_name="nom_colonne", value_name="values")
                 min_value = data_frame["values"].min()
@@ -558,6 +559,16 @@ class Area:
             else:
                 min_value = self.data[self.abscisse_column_name].min()
                 max_value = self.data[self.abscisse_column_name].max()
+            if st.session_state.range[1] > max_value:
+                st.session_state.range = (st.session_state.range[0], max_value)
+            if st.session_state.range[0] < min_value:
+                st.session_state.range = (min_value, st.session_state.range[1])
+            if self.range[1] > max_value:
+                self.range = (self.range[0], max_value)
+            if self.range[0] < min_value:
+                self.range = (min_value, self.range[1])
+            if self.range != st.session_state.range:
+                st.session_state.range = self.range
             if self.range != (None, None):
                 self.range = st.slider(  # type: ignore
                     "Choisissez l'intervalle des données",

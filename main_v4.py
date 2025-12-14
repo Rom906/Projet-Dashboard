@@ -144,6 +144,8 @@ with st.sidebar.expander("Gestion des données graphiqes"):
             st.session_state.nom_area_modifiée = nom_area_modifiée
 
         if nom_area_modifiée and nom_ligne_modifiée:
+            if "range" not in st.session_state:
+                st.session_state.range = st.session_state.graphiques.get_area_range(nom_ligne_modifiée, nom_area_modifiée)
             if (
                 nom_ligne_modifiée != st.session_state.nom_ligne_modifiée
                 or nom_area_modifiée != st.session_state.nom_area_modifiée
