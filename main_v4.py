@@ -34,7 +34,7 @@ if "données" not in st.session_state:
 
 parameters: Dict = {}
 
-st.sidebar.title("Dashboard test Julien Téo Romain V3")
+st.sidebar.title("Dashboard")
 
 # Navigation entre les pages
 

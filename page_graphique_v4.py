@@ -548,7 +548,6 @@ class Area:
 
     def render_sidebar_abscisse_interval_choose(self):
         if self.data is not None and not self.data.empty:
-            print(self.range, st.session_state.range)
             if self.content_type == self.BARCHART:
                 data_frame = self.data.melt(var_name="nom_colonne", value_name="values")
                 min_value = data_frame["values"].min()
