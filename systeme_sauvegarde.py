@@ -38,7 +38,6 @@ def save(page_graphique: Graphiques, page_données: Page_donnees_v3):
                     "index": j,
                     "show_name": area_courante.show_name,
                     "content_type": area_courante.content_type,
-                    "range": area_courante.range,  # type: ignore
                 }
             if data is not None:
                 sauvegarde[ligne_courante.title][area_courante.area_name][
@@ -107,8 +106,6 @@ def load(
                 if area_data["content_type"] == Area.MARKDOWN:
                     ligne_courante.areas[area_index].text = area_data["text"]
                     ligne_courante.areas[area_index].input_mode = False
-                else:
-                    ligne_courante.areas[area_index].range = area_data["range"]
 
             area_courante = ligne_courante.areas[area_index]
             area_courante.area_name = area_name
