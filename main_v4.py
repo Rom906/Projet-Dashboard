@@ -1,5 +1,5 @@
 import streamlit as st
-from page_donnees_V3 import Page_donnees_v3
+from page_donnees_V3 import Données
 from page_graphique_v4 import Graphiques, Area
 from typing import Dict
 from systeme_sauvegarde import save
@@ -25,7 +25,7 @@ if "graphiques" not in st.session_state:
     st.session_state.graphiques = Graphiques()
 
 if "données" not in st.session_state:
-    st.session_state.données = Page_donnees_v3()
+    st.session_state.données = Données()
 
 # NE PAS créer de références locales - toujours utiliser st.session_state directement
 

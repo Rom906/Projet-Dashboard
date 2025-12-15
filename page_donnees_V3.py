@@ -6,7 +6,7 @@ import io
 import re
 
 
-class Page_donnees_v3:
+class Données:
     def __init__(self):
         self.titre = "Visualisation des données"
         self.data = None
@@ -60,13 +60,13 @@ class Page_donnees_v3:
             # essayer csv.Sniffer pour détecter le délimiteur
             try:
                 dialect = csv.Sniffer().sniff(
-                    text_sample, delimiters=[",", "\t", ";", "|"]
+                    text_sample, delimiters=[",", "\t", ";", "|"] # type: ignore
                 )
                 delim = dialect.delimiter
             except Exception:
                 # fallback: compter les délimiteurs communs
                 counts = {d: text_sample.count(d) for d in [";", ",", "\t", "|"]}
-                delim = max(counts, key=counts.get)
+                delim = max(counts, key=counts.get) # type: ignore
 
             # détecter le séparateur décimal — si on a des nombres avec des virgules
             # mais que le délimiteur n'est pas la virgule, on utilisera decimal=','
@@ -103,7 +103,7 @@ class Page_donnees_v3:
 
             # fermer le fichier si on l'a ouvert nous-mêmes
             if isinstance(fichier, str):
-                fh2.close()
+                fh2.close() # type: ignore
 
         except Exception as e:
             st.error(f"Erreur lors du chargement des données: {str(e)}")
@@ -194,7 +194,7 @@ class Page_donnees_v3:
                 if col in self.data.columns:
                     self.data.at[row_index, col] = value
         # Force Streamlit à reconnaître le changement
-        self.data = self.data.copy()
+        self.data = self.data.copy() # type: ignore
         # Sauvegarder en session state
         self._save_to_session_state()
 
@@ -207,7 +207,7 @@ class Page_donnees_v3:
         if self.data is not None and row_index < len(self.data):
             self.data = self.data.drop(row_index).reset_index(drop=True)
         # Force Streamlit à reconnaître le changement
-        self.data = self.data.copy()
+        self.data = self.data.copy() # type: ignore
         # Sauvegarder en session state
         self._save_to_session_state()
 
@@ -262,7 +262,7 @@ class Page_donnees_v3:
 
                 if not new_data.empty:
                     self.data = new_data
-            except json.JSONDecodeError as e:
+            except json.JSONDecodeError as e: # type: ignore
                 import traceback
 
                 st.write(f"❌ Erreur JSON invalide lors du chargement")
@@ -307,34 +307,34 @@ class Page_donnees_v3:
             st.error(f"Erreur lors du calcul: {str(e)}")
             return False
 
-    def get_sum(self, column_name: str) -> float:
+    def get_sum(self, column_name: str) -> float | None:
         """Retourne la somme d'une colonne"""
         if self.data is not None and column_name in self.data.columns:
             return self.data[column_name].sum()
         return None
 
-    def get_mean(self, column_name: str) -> float:
+    def get_mean(self, column_name: str) -> float | None:
         """Retourne la moyenne d'une colonne"""
         if self.data is not None and column_name in self.data.columns:
             return self.data[column_name].mean()
         return None
 
-    def get_median(self, column_name: str) -> float:
+    def get_median(self, column_name: str) -> float | None:
         """Retourne la médiane d'une colonne"""
         if self.data is not None and column_name in self.data.columns:
             return self.data[column_name].median()
         return None
 
-    def get_std(self, column_name: str) -> float:
+    def get_std(self, column_name: str) -> float | None:
         """Retourne l'écart type d'une colonne"""
         if self.data is not None and column_name in self.data.columns:
             return self.data[column_name].std()
         return None
 
-    def get_variance(self, column_name: str) -> float:
+    def get_variance(self, column_name: str) -> float | None:
         """Retourne la variance d'une colonne"""
         if self.data is not None and column_name in self.data.columns:
-            return self.data[column_name].var()
+            return self.data[column_name].var() # type: ignore
         return None
 
     def afficher_page(self):
@@ -370,7 +370,7 @@ class Page_donnees_v3:
             graphiques_inst = st.session_state.get("graphiques")
             donnees_inst = st.session_state.get("données", self)
             if graphiques_inst is None:
-                from page_graphique_V3 import Graphiques
+                from page_graphique_v4 import Graphiques
 
                 graphiques_inst = Graphiques()
                 st.session_state.graphiques = graphiques_inst
@@ -422,7 +422,7 @@ class Page_donnees_v3:
                     self._save_to_session_state()
                     st.session_state[file_key] = True  # Marquer comme chargé
                     st.write(
-                        f"✅ CSV importé: {len(self.data)} lignes, {len(self.data.columns)} colonnes"
+                        f"✅ CSV importé: {len(self.data)} lignes, {len(self.data.columns)} colonnes" # type: ignore
                     )
                 except Exception as e:
                     st.write(f"❌ Erreur lors du chargement du fichier: {str(e)}")
@@ -669,7 +669,7 @@ class Page_donnees_v3:
                 graphiques_inst = st.session_state.get("graphiques")
                 donnees_inst = st.session_state.get("données", self)
                 if graphiques_inst is None:
-                    from page_graphique_V3 import Graphiques
+                    from page_graphique_v4 import Graphiques
 
                     graphiques_inst = Graphiques()
                 graphiques_inst, donnees_inst = load(

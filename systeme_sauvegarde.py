@@ -1,5 +1,5 @@
-from page_graphique_V3 import Graphiques, Area
-from page_donnees_V3 import Page_donnees_v3
+from page_graphique_v4 import Graphiques, Area
+from page_donnees_V3 import Données
 import json
 import pandas as pd
 
@@ -13,7 +13,7 @@ def convert_type(obj):
     return str(obj)
 
 
-def save(page_graphique: Graphiques, page_données: Page_donnees_v3):
+def save(page_graphique: Graphiques, page_données: Données):
     sauvegarde = {}
     lignes = page_graphique.lines
     for i in range(len(lignes)):
@@ -56,7 +56,7 @@ def save(page_graphique: Graphiques, page_données: Page_donnees_v3):
 
 
 def load(
-    sauvegarde_str: str, page_graphique: Graphiques, page_données: Page_donnees_v3
+    sauvegarde_str: str, page_graphique: Graphiques, page_données: Données
 ):
     sauvegarde = json.loads(sauvegarde_str)
     # Restaurer d'abord les données brutes si présentes afin de pouvoir reconstruire
