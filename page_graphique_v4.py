@@ -668,11 +668,6 @@ class Area:
                     self.data = obs_df    # effectifs observés par valeur
                     self.theo = theo_df   # effectifs théoriques par valeur
 
-                st.write("Effectifs observés pour le test :")
-                st.dataframe(self.data)
-                st.write("Effectifs théoriques pour le test :")
-                st.dataframe(self.theo)
-
         else:
             st.warning(
                 "Aucune donnée disponible. Veuillez d'abord importer ou créer des données sur la page 'Données'."
