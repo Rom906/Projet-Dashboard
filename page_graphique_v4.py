@@ -566,8 +566,6 @@ class Area:
                 self.range = (self.range[0], max_value)
             if self.range[0] < min_value:
                 self.range = (min_value, self.range[1])
-            if self.range != st.session_state.range:
-                st.session_state.range = self.range
             if self.range != (None, None):
                 self.range = st.slider(  # type: ignore
                     "Choisissez l'intervalle des données",
