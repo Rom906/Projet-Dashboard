@@ -364,7 +364,7 @@ class Données:
             label_visibility="collapsed",
         )
         # Traiter la sauvegarde JSON
-        if uploaded_file_json is not None:
+        if uploaded_file_json is not None and not st.session_state.get("json_loaded", False):
             sauvegarde_str = uploaded_file_json.getvalue().decode("utf-8")
 
             # Récupérer ou créer les instances
@@ -385,12 +385,16 @@ class Données:
             st.session_state["données"] = donnees_inst
             self.data = donnees_inst.data
 
+            # 🔥 RESET CRITIQUE DES WIDGETS DYNAMIQUES 🔥
             st.session_state.add_row_counter = 0
-
             for key in list(st.session_state.keys()):
                 if key.startswith("new_row_"):
                     del st.session_state[key]
 
+            # Marquer comme chargé pour éviter la boucle
+            st.session_state["json_loaded"] = True
+
+            # Rerun UNIQUE
             st.rerun()
         # Traiter le fichier uploadé
         if uploaded_file is not None:
