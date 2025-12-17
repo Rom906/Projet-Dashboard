@@ -123,7 +123,7 @@ with st.sidebar.expander("Retirer des zones"):
 
 # Choix de la ligne et de la zone dans laquelle on modifie les graphiques
 
-with st.sidebar.expander("Gestion des données graphiqes"):
+with st.sidebar.expander("Gestion des données graphiques"):
     st.subheader("Choix de la ligne à modifier")
     nom_ligne_modifiée = st.selectbox(
         "Selectionnez la ligne à modifier",

@@ -366,48 +366,35 @@ class Données:
         # Traiter la sauvegarde JSON
         if uploaded_file_json is not None:
             sauvegarde_str = uploaded_file_json.getvalue().decode("utf-8")
-            # Récupérer (ou initialiser) les instances dans la session
+
+            # Récupérer ou créer les instances
             graphiques_inst = st.session_state.get("graphiques")
             donnees_inst = st.session_state.get("données", self)
+
             if graphiques_inst is None:
                 from page_graphique_v4 import Graphiques
-
                 graphiques_inst = Graphiques()
-                st.session_state.graphiques = graphiques_inst
-            # Assurer que la page de données en session existe
-            st.session_state.données = donnees_inst
-            # Charger la sauvegarde et mettre à jour les instances
+
+            # Charger la sauvegarde
             graphiques_inst, donnees_inst = load(
                 sauvegarde_str, graphiques_inst, donnees_inst
             )
-            st.session_state.graphiques = graphiques_inst
-            st.session_state.données = donnees_inst
-            self.data = donnees_inst.data
-            # IMPORTANT: Sauvegarder les données chargées en JSON dans la session state
-            # Ceci crée le backup JSON à partir de la sauvegarde complète chargée
-            if self.data is not None:
-                try:
-                    import json
 
-                    data_dict = {}
-                    for col in self.data.columns:
-                        col_data = []
-                        for val in self.data[col]:
-                            if pd.isna(val):
-                                col_data.append(None)
-                            elif isinstance(val, (int, float, str, bool)):
-                                col_data.append(val)
-                            elif hasattr(val, "item"):  # numpy types
-                                col_data.append(val.item())
-                            else:
-                                col_data.append(str(val))
-                        data_dict[col] = col_data
-                    st.session_state["données_backup_json"] = json.dumps(
-                        data_dict, ensure_ascii=False
-                    )
-                    st.write(f"✅ Sauvegarde importée: {len(data_dict)} colonnes")
-                except Exception as e:
-                    st.write(f"❌ Erreur création backup JSON: {e}")
+            # Mettre à jour la session
+            st.session_state["graphiques"] = graphiques_inst
+            st.session_state["données"] = donnees_inst
+            self.data = donnees_inst.data
+
+            # 🔥 RESET CRITIQUE DES WIDGETS DYNAMIQUES 🔥
+            # (sinon "Ajouter une ligne" casse)
+            st.session_state.add_row_counter = 0
+
+            for key in list(st.session_state.keys()):
+                if key.startswith("new_row_"):
+                    del st.session_state[key]
+
+            # Rerun propre avec un état cohérent
+            st.rerun()
         # Traiter le fichier uploadé
         if uploaded_file is not None:
             # Créer une clé unique pour ce fichier pour tracker s'il a déjà été chargé
@@ -475,7 +462,7 @@ class Données:
                         st.rerun()  # Forcer le rerun pour recalculer l'affichage du tableau
                     except AttributeError:
                         # Fallback pour les versions anciennes de Streamlit
-                        st.experimental_rerun()
+                        st.rerun()
                 except Exception as e:
                     st.error(f"❌ Erreur lors de l'ajout de la ligne: {str(e)}")
                     import traceback
