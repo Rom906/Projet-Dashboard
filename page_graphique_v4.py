@@ -312,7 +312,7 @@ class Area:
         fig, ax = plt.subplots()
         if self.abscisse_column_name is not None:
             if self.range[0] is not None and self.range[1] is not None:
-                data_filtered = self.data[(self.data[self.abscisse_column_name] > self.range[0]) & (self.data[self.abscisse_column_name] < self.range[1])]  # type: ignore
+                data_filtered = self.data[(self.data[self.abscisse_column_name] >= self.range[0]) & (self.data[self.abscisse_column_name] <= self.range[1])]  # type: ignore
             else:
                 data_filtered = self.data
         else:
