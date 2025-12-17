@@ -385,15 +385,12 @@ class Données:
             st.session_state["données"] = donnees_inst
             self.data = donnees_inst.data
 
-            # 🔥 RESET CRITIQUE DES WIDGETS DYNAMIQUES 🔥
-            # (sinon "Ajouter une ligne" casse)
             st.session_state.add_row_counter = 0
 
             for key in list(st.session_state.keys()):
                 if key.startswith("new_row_"):
                     del st.session_state[key]
 
-            # Rerun propre avec un état cohérent
             st.rerun()
         # Traiter le fichier uploadé
         if uploaded_file is not None:
