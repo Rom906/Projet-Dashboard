@@ -385,7 +385,6 @@ class Données:
             st.session_state["données"] = donnees_inst
             self.data = donnees_inst.data
 
-            # 🔥 RESET CRITIQUE DES WIDGETS DYNAMIQUES 🔥
             st.session_state.add_row_counter = 0
             for key in list(st.session_state.keys()):
                 if key.startswith("new_row_"):
@@ -394,7 +393,6 @@ class Données:
             # Marquer comme chargé pour éviter la boucle
             st.session_state["json_loaded"] = True
 
-            # Rerun UNIQUE
             st.rerun()
         # Traiter le fichier uploadé
         if uploaded_file is not None:
