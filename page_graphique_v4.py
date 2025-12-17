@@ -558,15 +558,16 @@ class Area:
             else:
                 min_value = self.data[self.abscisse_column_name].min()
                 max_value = self.data[self.abscisse_column_name].max()
-            if st.session_state.range[1] > max_value:
-                st.session_state.range = (st.session_state.range[0], max_value)
-            if st.session_state.range[0] < min_value:
-                st.session_state.range = (min_value, st.session_state.range[1])
-            if self.range[1] > max_value:
-                self.range = (self.range[0], max_value)
-            if self.range[0] < min_value:
-                self.range = (min_value, self.range[1])
-            if self.range != (None, None):
+            if self.range[0] is not None and self.range[0] is not None:
+                if st.session_state.range[0] is not None and st.session_state.range[1] is not None:
+                    if st.session_state.range[1] > max_value:
+                        st.session_state.range = (st.session_state.range[0], max_value)
+                    if st.session_state.range[0] < min_value:
+                        st.session_state.range = (min_value, st.session_state.range[1])
+                if self.range[1] > max_value:
+                    self.range = (self.range[0], max_value)
+                if self.range[0] < min_value:
+                    self.range = (min_value, self.range[1])
                 self.range = st.slider(  # type: ignore
                     "Choisissez l'intervalle des données",
                     min_value,
