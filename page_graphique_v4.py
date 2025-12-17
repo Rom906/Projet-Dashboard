@@ -270,10 +270,11 @@ class Area:
             .size()
             .reset_index(name="count")
         )
-        data_frame_avec_comptage = data_frame_avec_comptage[
-            (data_frame_avec_comptage["values"] >= self.range[0])
-            & (data_frame_avec_comptage["values"] <= self.range[1])
-        ]
+        if self.range[0] is not None and self.range[1] is not None:
+            data_frame_avec_comptage = data_frame_avec_comptage[
+                (data_frame_avec_comptage["values"] >= self.range[0])
+                & (data_frame_avec_comptage["values"] <= self.range[1])
+            ]
         sns.barplot(
             data=data_frame_avec_comptage,
             x="values",
@@ -291,13 +292,17 @@ class Area:
         if self.abscisse_column_name is not None:
             plotted_columns.remove(self.abscisse_column_name)
             data_frame = self.data.melt(id_vars=self.abscisse_column_name, value_vars=plotted_columns, var_name="nom_colonne", value_name="values")  # type: ignore
-            data_frame = data_frame[
-                (data_frame[self.abscisse_column_name] >= self.range[0])
-                & (data_frame[self.abscisse_column_name] <= self.range[1])
-            ]
+            if self.range[0] is not None and self.range[1] is not None:
+                data_frame = data_frame[
+                    (data_frame[self.abscisse_column_name] >= self.range[0])
+                    & (data_frame[self.abscisse_column_name] <= self.range[1])
+                ]
             sns.lineplot(data=data_frame, x=self.abscisse_column_name, y="values", hue="nom_colonne", ax=ax)  # type: ignore
         else:
-            data_filtered = self.data.loc[self.range[0]: self.range[1]]  # type: ignore
+            if self.range[0] is not None and self.range[1] is not None:
+                data_filtered = self.data.loc[self.range[0]: self.range[1]]  # type: ignore
+            else:
+                data_filtered = self.data
             for column in data_filtered.columns:  # type: ignore
                 sns.lineplot(x=data_filtered.index, y=data_filtered[column], ax=ax, label=column)  # type: ignore
         st.pyplot(fig)
@@ -306,9 +311,15 @@ class Area:
         sns.set_theme(style="darkgrid")
         fig, ax = plt.subplots()
         if self.abscisse_column_name is not None:
-            data_filtered = self.data[(self.data[self.abscisse_column_name] > self.range[0]) & (self.data[self.abscisse_column_name] < self.range[1])]  # type: ignore
+            if self.range[0] is not None and self.range[1] is not None:
+                data_filtered = self.data[(self.data[self.abscisse_column_name] > self.range[0]) & (self.data[self.abscisse_column_name] < self.range[1])]  # type: ignore
+            else:
+                data_filtered = self.data
         else:
-            data_filtered = self.data.loc[self.range[0]: self.range[1]]  # type: ignore
+            if self.range[0] is not None and self.range[1] is not None:
+                data_filtered = self.data.loc[self.range[0]: self.range[1]]  # type: ignore
+            else:
+                data_filtered = self.data
         plotted_columns = self.data.columns.to_list()  # type: ignore
         if self.abscisse_column_name:
             plotted_columns.remove(self.abscisse_column_name)
